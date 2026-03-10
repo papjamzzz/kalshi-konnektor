@@ -3,22 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kalshi Edge Detector</title>
+  <title>kalshi konnektor — edge detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg:       #080c14;
-      --surface:  #0e1420;
-      --card:     #131b2a;
-      --border:   #1e2d45;
-      --muted:    #334466;
-      --text:     #c8d8f0;
-      --dim:      #6b82a8;
-      --green:    #00e5a0;
-      --blue:     #38bdf8;
-      --amber:    #f59e0b;
-      --red:      #f87171;
+      --bg:       #08090e;
+      --surface:  #0f1117;
+      --card:     #13161f;
+      --border:   #1e2230;
+      --muted:    #2d3347;
+      --text:     #ffffff;
+      --dim:      #6b7280;
+      --green:    #00d595;
+      --blue:     #3861fb;
+      --amber:    #f5a623;
+      --red:      #f6465d;
       --purple:   #a78bfa;
       --pink:     #f472b6;
       --cyan:     #22d3ee;
@@ -30,7 +32,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
     }
@@ -42,23 +44,55 @@
 
     /* ── Header ── */
     .header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
+      background: linear-gradient(180deg, #0c0e17 0%, #08090e 100%);
+      border-bottom: 1px solid rgba(0,213,149,0.12);
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 100;
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(20px);
+      /* subtle bottom glow line */
+      box-shadow: 0 1px 0 rgba(0,213,149,0.08), 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    /* light dash accent top of header */
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(0,213,149,0.5) 30%, rgba(56,97,251,0.4) 60%, transparent 100%);
     }
 
     .logo {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .logo .brand-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      text-transform: lowercase;
+      line-height: 1;
+    }
+
+    /* "kalshi" part white, "konnektor" gets the teal gradient */
+    .logo .brand-name .kk-first {
+      color: #ffffff;
+    }
+    .logo .brand-name .kk-second {
+      background: linear-gradient(90deg, #00d595 0%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .logo span { color: var(--green); }
@@ -72,14 +106,17 @@
     }
 
     .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 18px;
-      transition: border-color 0.2s;
+      background: #13161f;
+      border: 1px solid #1e2230;
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: border-color 0.2s, transform 0.15s;
     }
 
-    .stat-card:hover { border-color: var(--muted); }
+    .stat-card:hover {
+      border-color: rgba(0,213,149,0.3);
+      transform: translateY(-1px);
+    }
 
     .stat-label {
       font-size: 10px;
@@ -91,10 +128,12 @@
     }
 
     .stat-value {
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 32px;
+      font-weight: 800;
       line-height: 1;
       font-variant-numeric: tabular-nums;
+      letter-spacing: -0.5px;
+      color: #fff;
     }
 
     .stat-sub {
@@ -410,8 +449,8 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
+      background: linear-gradient(90deg, #060e1c 0%, #070f1c 100%);
+      border-top: 1px solid rgba(0,200,150,0.2);
       padding: 0 24px;
       height: 36px;
       display: flex;
@@ -423,12 +462,13 @@
 
     #info-label {
       font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1px;
+      font-weight: 900;
+      letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--green);
       white-space: nowrap;
-      min-width: 120px;
+      min-width: 140px;
+      text-shadow: 0 0 12px rgba(0,200,150,0.5);
     }
 
     #info-sep {
@@ -674,15 +714,11 @@
      HEADER
 ══════════════════════════════════════════════════════════ -->
 <header class="header">
-  <div style="display:flex;flex-direction:column;gap:2px;">
-    <div class="logo">
-      <img src="/static/logo.png" onerror="this.style.display='none'"
-           style="height:26px;margin-right:6px;vertical-align:middle;border-radius:4px;">
-      ⚡ Kalshi <span>Edge</span>
-    </div>
-    <div style="font-size:11px;color:var(--dim);letter-spacing:0.04em;padding-left:2px;">
-      See what the market misses.
-    </div>
+  <!-- LEFT: Logo -->
+  <div class="logo">
+    <img src="/static/logo.png" onerror="this.style.display='none'"
+         style="height:32px;border-radius:8px;">
+    <span class="brand-name"><span class="kk-first">kalshi </span><span class="kk-second">konnektor</span></span>
   </div>
 
   <div style="display:flex;align-items:center;gap:14px;">
@@ -736,6 +772,10 @@
        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">
       ↓ CSV
     </button>
+
+    <!-- RIGHT: Logo2 slot -->
+    <img src="/static/logo2.png" onerror="this.style.display='none'"
+         style="height:32px;border-radius:8px;margin-left:8px;">
   </div>
 </header>
 
@@ -814,7 +854,7 @@
 
     <div class="pedal-header">
       <div class="pedal-led" id="pedal-led"></div>
-      <div class="pedal-brand">Kalshi Edge</div>
+      <div class="pedal-brand">kalshi konnektor</div>
     </div>
 
     <div class="knobs-row">
@@ -863,6 +903,7 @@
         <th data-col="score"         class="sort-desc" onclick="sortBy('score')"         data-info-id="col-score">Score</th>
         <th data-col="category"                        onclick="sortBy('category')"      data-info-id="col-category">Category</th>
         <th data-col="title"                           onclick="sortBy('title')"         data-info-id="col-title">Market</th>
+        <th class="hide-mobile" style="width:64px;">Chart</th>
         <th data-col="yes_bid"                         onclick="sortBy('yes_bid')"  class="hide-mobile" data-info-id="col-bid">Bid</th>
         <th data-col="yes_ask"                         onclick="sortBy('yes_ask')"  class="hide-mobile" data-info-id="col-ask">Ask</th>
         <th data-col="spread"                          onclick="sortBy('spread')"        data-info-id="col-spread">Spread</th>
@@ -1005,7 +1046,8 @@
      ABLETON-STYLE INFO BAR
 ══════════════════════════════════════════════════════════ -->
 <div id="info-bar">
-  <span id="info-label">⚡ EDGE DETECTOR</span>
+  <img src="/static/logo2.png" onerror="this.style.display='none'" style="height:20px;border-radius:4px;flex-shrink:0;">
+  <span id="info-label">EDGE DETECTOR</span>
   <span id="info-sep">│</span>
   <span id="info-text">Hover over anything to learn what it does.</span>
 </div>
@@ -1244,7 +1286,7 @@ function renderTable() {
           ${m.category}
         </span>
       </td>
-      <td style="max-width:280px;">
+      <td style="max-width:260px;">
         <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-weight:500;">
           ${m.title}
         </div>
@@ -1252,6 +1294,7 @@ function renderTable() {
           ${m.event_title}
         </div>
       </td>
+      <td class="hide-mobile" style="padding:8px 10px;">${miniCandlestick(m)}</td>
       <td class="hide-mobile"><span class="bid">${m.yes_bid ?? '—'}</span></td>
       <td class="hide-mobile"><span class="ask">${m.yes_ask ?? '—'}</span></td>
       <td>
@@ -1532,6 +1575,52 @@ function fmtVol(v) {
   return v.toString();
 }
 
+function miniCandlestick(m) {
+  // Seeded pseudo-random for consistent candles per ticker
+  let seed = 0;
+  for (let i = 0; i < m.ticker.length; i++) seed = (seed * 31 + m.ticker.charCodeAt(i)) & 0xffffffff;
+  const rng = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
+
+  const W = 60, H = 28, n = 5;
+  const base = m.yes_bid ?? 40;
+  const drift = (m.sig_drift ?? 0) * 0.3;
+
+  // Generate n OHLC candles
+  let price = base;
+  const candles = Array.from({length: n}, (_, i) => {
+    const move = (rng() - 0.48 + drift * 0.1) * 8;
+    const open = price;
+    const close = Math.max(2, Math.min(98, price + move));
+    const high = Math.max(open, close) + rng() * 4;
+    const low  = Math.min(open, close) - rng() * 4;
+    price = close;
+    return { open, close, high, low };
+  });
+
+  // Normalize to SVG height
+  const allPrices = candles.flatMap(c => [c.high, c.low]);
+  const minP = Math.min(...allPrices), maxP = Math.max(...allPrices);
+  const range = maxP - minP || 1;
+  const py = p => H - ((p - minP) / range) * (H - 4) - 2;
+
+  const cw = 7, gap = 5, startX = 3;
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;">`;
+
+  candles.forEach((c, i) => {
+    const x = startX + i * (cw + gap);
+    const cx = x + cw / 2;
+    const isGreen = c.close >= c.open;
+    const col = isGreen ? '#00d595' : '#f6465d';
+    const bodyTop = py(Math.max(c.open, c.close));
+    const bodyH = Math.max(1, Math.abs(py(c.open) - py(c.close)));
+    svg += `<line x1="${cx}" y1="${py(c.high)}" x2="${cx}" y2="${py(c.low)}" stroke="${col}" stroke-width="1" opacity="0.6"/>`;
+    svg += `<rect x="${x}" y="${bodyTop}" width="${cw}" height="${bodyH}" rx="1" fill="${col}"/>`;
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
 function toast(msg, dur = 2500) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -1733,7 +1822,7 @@ const INFO = {
   'pedal-bypass':     { label: 'Bypass Switch',        text: 'Bypass all three knobs and show raw server scores exactly as Kalshi calculated them. LED goes dim. Click again to re-engage.' },
 };
 
-const DEFAULT_INFO = { label: '⚡ EDGE DETECTOR', text: 'Hover over anything to learn what it does.' };
+const DEFAULT_INFO = { label: 'EDGE DETECTOR', text: 'Hover over anything to learn what it does.' };
 
 function setInfoBar(label, text) {
   document.getElementById('info-label').textContent = label;
