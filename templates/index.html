@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalshi Edge Detector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:       #080c14;
+      --surface:  #0e1420;
+      --card:     #131b2a;
+      --border:   #1e2d45;
+      --muted:    #334466;
+      --text:     #c8d8f0;
+      --dim:      #6b82a8;
+      --green:    #00e5a0;
+      --blue:     #38bdf8;
+      --amber:    #f59e0b;
+      --red:      #f87171;
+      --purple:   #a78bfa;
+      --pink:     #f472b6;
+      --cyan:     #22d3ee;
+      --orange:   #fb923c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .logo span { color: var(--green); }
+
+    /* ── Stat cards ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px 24px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      transition: border-color 0.2s;
+    }
+
+    .stat-card:hover { border-color: var(--muted); }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--dim);
+      margin-top: 4px;
+    }
+
+    /* ── Filters ── */
+    .filter-bar {
+      padding: 12px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .cat-pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--dim);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .cat-pill:hover { border-color: var(--muted); color: var(--text); }
+    .cat-pill.active { background: var(--green); border-color: var(--green); color: #000; }
+
+    .filter-input {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .filter-input:focus { border-color: var(--green); }
+    .filter-input::placeholder { color: var(--dim); }
+
+    .filter-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+    /* ── Table ── */
+    .table-wrap {
+      padding: 0 24px 16px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--dim);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    thead th:hover { color: var(--text); }
+    thead th.sort-asc::after  { content: ' ↑'; color: var(--green); }
+    thead th.sort-desc::after { content: ' ↓'; color: var(--green); }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(30, 45, 69, 0.5);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    tbody tr:hover { background: var(--card); }
+    tbody tr.selected { background: rgba(0, 229, 160, 0.07); }
+
+    tbody td { padding: 11px 12px; vertical-align: middle; }
+
+    /* ── Score badge ── */
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-bar-wrap {
+      width: 52px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* ── Vol tier badge ── */
+    .tier-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .tier-ghost  { background: rgba(107,130,168,0.15); color: var(--dim); }
+    .tier-thin   { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tier-active { background: rgba(245,158,11,0.15);  color: var(--amber); }
+    .tier-liquid { background: rgba(0,229,160,0.15);   color: var(--green); }
+    .tier-deep   { background: rgba(56,189,248,0.15);  color: var(--blue); }
+
+    /* ── Category badge ── */
+    .cat-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* ── Bid/Ask display ── */
+    .bid-ask {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+
+    .bid { color: var(--red); }
+    .ask { color: var(--green); }
+    .ba-sep { color: var(--muted); }
+
+    /* ── Kelly badge ── */
+    .kelly-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    /* ── Detail panel ── */
+    #detail-panel {
+      position: fixed;
+      right: -420px;
+      top: 0;
+      width: 400px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 200;
+      overflow-y: auto;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 0;
+    }
+
+    #detail-panel.open { right: 0; }
+
+    .panel-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+
+    .signal-row {
+      margin-bottom: 14px;
+    }
+
+    .signal-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--dim);
+      margin-bottom: 4px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .signal-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .signal-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── Watchlist ── */
+    .star-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--dim);
+      font-size: 16px;
+      padding: 2px 4px;
+      transition: color 0.15s;
+    }
+
+    .star-btn.starred { color: var(--amber); }
+
+    /* ── Refresh ring ── */
+    .refresh-ring {
+      width: 32px;
+      height: 32px;
+      position: relative;
+    }
+
+    .refresh-ring svg { transform: rotate(-90deg); }
+
+    .refresh-ring circle {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 3;
+    }
+
+    .refresh-ring .progress {
+      stroke: var(--green);
+      stroke-dasharray: 82;
+      stroke-dashoffset: 82;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    /* ── Loader ── */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 60px;
+      color: var(--dim);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      transition: transform 0.3s ease;
+      z-index: 999;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: var(--dim);
+    }
+
+    /* ── Movers section ── */
+    .mover-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .mover-pill:hover { border-color: var(--muted); }
+
+    /* ── Info bar (Ableton-style) ── */
+    #info-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 0 24px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 300;
+      user-select: none;
+    }
+
+    #info-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--green);
+      white-space: nowrap;
+      min-width: 120px;
+    }
+
+    #info-sep {
+      color: var(--border);
+      font-size: 14px;
+    }
+
+    #info-text {
+      font-size: 12px;
+      color: var(--dim);
+      transition: color 0.15s;
+    }
+
+    body { padding-bottom: 36px; }
+
+    /* ── Effects Pedal ── */
+    #pedal-section {
+      display: none;
+      padding: 16px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      justify-content: center;
+    }
+    #pedal-section.open { display: flex; }
+
+    .effects-pedal {
+      position: relative;
+      background: linear-gradient(160deg, #1c2030 0%, #141820 100%);
+      border: 2px solid #252838;
+      border-radius: 16px;
+      padding: 16px 32px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      box-shadow:
+        0 6px 24px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      min-width: 380px;
+    }
+
+    /* brushed metal lines */
+    .effects-pedal::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 14px;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent, transparent 3px,
+        rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 6px
+      );
+      pointer-events: none;
+    }
+
+    .pedal-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .pedal-led {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green), 0 0 14px rgba(0,229,160,0.4);
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .pedal-led.off {
+      background: #2a2f3e;
+      box-shadow: 0 0 0 rgba(0,229,160,0);
+    }
+
+    .pedal-brand {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    .knobs-row {
+      display: flex;
+      gap: 36px;
+      align-items: flex-end;
+    }
+
+    .knob-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .knob-outer {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #38394e, #1c1d28);
+      border: 2px solid #1e2030;
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.7),
+        inset 0 2px 0 rgba(255,255,255,0.07),
+        inset 0 -2px 3px rgba(0,0,0,0.4);
+      position: relative;
+      cursor: ns-resize;
+      user-select: none;
+      transition: box-shadow 0.15s;
+    }
+
+    .knob-outer:hover {
+      box-shadow:
+        0 4px 14px rgba(0,0,0,0.7),
+        0 0 0 1px rgba(0,229,160,0.25),
+        inset 0 2px 0 rgba(255,255,255,0.07),
+        inset 0 -2px 3px rgba(0,0,0,0.4);
+    }
+    .knob-outer.dragging {
+      box-shadow:
+        0 4px 14px rgba(0,0,0,0.7),
+        0 0 0 2px rgba(0,229,160,0.5),
+        0 0 12px rgba(0,229,160,0.2),
+        inset 0 2px 0 rgba(255,255,255,0.07);
+    }
+
+    /* The marker dot — rotates with the knob div */
+    .knob-outer::after {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 3px;
+      height: 12px;
+      transform: translateX(-50%);
+      background: var(--green);
+      border-radius: 2px;
+      box-shadow: 0 0 5px rgba(0,229,160,0.8);
+    }
+
+    /* Arc track behind each knob */
+    .knob-track {
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      pointer-events: none;
+    }
+
+    .knob-label {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .knob-readout {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--green);
+      font-variant-numeric: tabular-nums;
+      min-width: 40px;
+      text-align: center;
+      font-family: 'SF Mono', monospace;
+    }
+
+    .pedal-footer {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .bypass-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #252838, #161820);
+      border: 2px solid #252838;
+      cursor: pointer;
+      color: var(--dim);
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition: all 0.15s;
+    }
+    .bypass-btn:hover { border-color: var(--muted); color: var(--text); }
+    .bypass-btn.active {
+      background: radial-gradient(circle at 40% 35%, #0d2018, #0a1510);
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 0 10px rgba(0,229,160,0.15);
+    }
+
+    .pedal-model {
+      font-size: 7px;
+      letter-spacing: 2.5px;
+      color: #2a3040;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .fx-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .fx-toggle-btn:hover { border-color: var(--muted); color: var(--text); }
+    .fx-toggle-btn.active {
+      border-color: var(--green);
+      color: var(--green);
+      background: rgba(0,229,160,0.06);
+    }
+
+    .live-indicator {
+      display: none;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: 0.5px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .live-indicator.show { display: inline; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .hide-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════════ -->
+<header class="header">
+  <div style="display:flex;flex-direction:column;gap:2px;">
+    <div class="logo">
+      <img src="/static/logo.png" onerror="this.style.display='none'"
+           style="height:26px;margin-right:6px;vertical-align:middle;border-radius:4px;">
+      ⚡ Kalshi <span>Edge</span>
+    </div>
+    <div style="font-size:11px;color:var(--dim);letter-spacing:0.04em;padding-left:2px;">
+      See what the market misses.
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:14px;">
+    <!-- Last updated -->
+    <div id="last-update" style="font-size:11px;color:var(--dim);">—</div>
+
+    <!-- Auto-refresh selector -->
+    <select id="refresh-select" class="filter-input" style="width:auto;padding:4px 8px;font-size:12px;">
+      <option value="0">Auto-refresh: Off</option>
+      <option value="60" selected>Every 60s</option>
+      <option value="300">Every 5m</option>
+      <option value="600">Every 10m</option>
+    </select>
+
+    <!-- Refresh ring + button -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="refresh-ring" data-info-id="refresh-ring">
+        <svg width="32" height="32" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="13"/>
+          <circle class="progress" id="refresh-ring" cx="16" cy="16" r="13"/>
+        </svg>
+      </div>
+      <button onclick="fetchMarkets(true)" data-info-id="btn-refresh" style="
+        background: var(--green); color: #000;
+        border: none; border-radius: 7px;
+        padding: 6px 14px; font-size: 12px;
+        font-weight: 700; cursor: pointer;
+        transition: opacity 0.15s;
+      " onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+        ↻ Refresh
+      </button>
+    </div>
+
+    <!-- FX toggle -->
+    <span id="live-indicator" class="live-indicator">● LIVE</span>
+    <button id="fx-toggle-btn" class="fx-toggle-btn" onclick="togglePedal()" data-info-id="fx-toggle">
+      🎛 FX
+    </button>
+
+    <!-- Export -->
+    <button onclick="exportCSV()" data-info-id="btn-export" style="
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    " onmouseover="this.style.borderColor='var(--muted)';this.style.color='var(--text)'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">
+      ↓ CSV
+    </button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     STAT CARDS
+══════════════════════════════════════════════════════════ -->
+<div class="stat-grid" id="stat-grid">
+  <div class="stat-card" data-info-id="stat-total">
+    <div class="stat-label">Markets Scored</div>
+    <div class="stat-value" id="s-total" style="color:var(--blue);">—</div>
+    <div class="stat-sub" id="s-showing">loading...</div>
+  </div>
+  <div class="stat-card" data-info-id="stat-top">
+    <div class="stat-label">Top Score</div>
+    <div class="stat-value" id="s-top" style="color:var(--green);">—</div>
+    <div class="stat-sub" id="s-top-market">—</div>
+  </div>
+  <div class="stat-card" data-info-id="stat-avg">
+    <div class="stat-label">Avg Score</div>
+    <div class="stat-value" id="s-avg" style="color:var(--amber);">—</div>
+    <div class="stat-sub">across all markets</div>
+  </div>
+  <div class="stat-card" data-info-id="stat-dist">
+    <div class="stat-label">Score Distribution</div>
+    <div style="display:flex;gap:6px;margin-top:6px;" id="s-dist">
+      <canvas id="dist-chart" width="160" height="48"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TOP MOVERS (shown when history exists)
+══════════════════════════════════════════════════════════ -->
+<div id="movers-bar" style="display:none;padding:8px 24px;background:var(--surface);border-bottom:1px solid var(--border);" data-info-id="movers-bar">
+  <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-right:10px;">🔥 Top Movers</span>
+  <div id="movers-list" style="display:inline-flex;gap:6px;flex-wrap:wrap;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     FILTER BAR
+══════════════════════════════════════════════════════════ -->
+<div class="filter-bar">
+  <button class="cat-pill active" data-cat="" onclick="setCategory('')">All</button>
+  <div id="cat-pills"></div>
+
+  <div class="filter-sep"></div>
+
+  <input type="number" id="min-score" class="filter-input" style="width:90px;"
+    placeholder="Min score" value="0" min="0" max="100" onchange="applyFilters()"
+    data-info-id="min-score" />
+
+  <input type="number" id="min-vol" class="filter-input" style="width:90px;"
+    placeholder="Min vol" value="0" min="0" onchange="applyFilters()"
+    data-info-id="min-vol" />
+
+  <div class="filter-sep"></div>
+
+  <input type="text" id="search" class="filter-input" style="width:220px;"
+    placeholder="🔍 Search markets..." oninput="applyFilters()"
+    data-info-id="search" />
+
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <label style="font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px;cursor:pointer;"
+      data-info-id="watchlist-only">
+      <input type="checkbox" id="watchlist-only" onchange="applyFilters()" style="accent-color:var(--amber);" />
+      Watchlist only
+    </label>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     EFFECTS PEDAL
+══════════════════════════════════════════════════════════ -->
+<div id="pedal-section">
+  <div class="effects-pedal" data-info-id="pedal-body">
+
+    <div class="pedal-header">
+      <div class="pedal-led" id="pedal-led"></div>
+      <div class="pedal-brand">Kalshi Edge</div>
+    </div>
+
+    <div class="knobs-row">
+
+      <!-- Knob 1: SIGNAL (overall gain) -->
+      <div class="knob-group" data-info-id="knob-signal">
+        <div class="knob-readout" id="readout-signal">1.0×</div>
+        <div class="knob-outer" id="knob-signal"></div>
+        <div class="knob-label">Signal</div>
+      </div>
+
+      <!-- Knob 2: DEPTH (volume pro-rating aggressiveness) -->
+      <div class="knob-group" data-info-id="knob-depth">
+        <div class="knob-readout" id="readout-depth">2.0×</div>
+        <div class="knob-outer" id="knob-depth"></div>
+        <div class="knob-label">Depth</div>
+      </div>
+
+      <!-- Knob 3: TIME (time decay weight) -->
+      <div class="knob-group" data-info-id="knob-time">
+        <div class="knob-readout" id="readout-time">1.0×</div>
+        <div class="knob-outer" id="knob-time"></div>
+        <div class="knob-label">Time</div>
+      </div>
+
+    </div>
+
+    <div class="pedal-footer">
+      <button class="bypass-btn" id="bypass-btn" onclick="toggleBypass()" data-info-id="pedal-bypass">
+        BYPASS
+      </button>
+      <div class="pedal-model">KE-1 · Signal Processor</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TABLE
+══════════════════════════════════════════════════════════ -->
+<div class="table-wrap" style="margin-top:12px;">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32px;"></th>
+        <th data-col="score"         class="sort-desc" onclick="sortBy('score')"         data-info-id="col-score">Score</th>
+        <th data-col="category"                        onclick="sortBy('category')"      data-info-id="col-category">Category</th>
+        <th data-col="title"                           onclick="sortBy('title')"         data-info-id="col-title">Market</th>
+        <th data-col="yes_bid"                         onclick="sortBy('yes_bid')"  class="hide-mobile" data-info-id="col-bid">Bid</th>
+        <th data-col="yes_ask"                         onclick="sortBy('yes_ask')"  class="hide-mobile" data-info-id="col-ask">Ask</th>
+        <th data-col="spread"                          onclick="sortBy('spread')"        data-info-id="col-spread">Spread</th>
+        <th data-col="volume"                          onclick="sortBy('volume')"        data-info-id="col-volume">Volume</th>
+        <th data-col="vol_weight"                      onclick="sortBy('vol_weight')" class="hide-mobile" data-info-id="col-weight">Wgt</th>
+        <th data-col="days_to_close"                   onclick="sortBy('days_to_close')" class="hide-mobile" data-info-id="col-days">Days</th>
+        <th data-col="kelly_size"                      onclick="sortBy('kelly_size')"    data-info-id="col-size">Size</th>
+        <th style="width:32px;"></th>
+      </tr>
+    </thead>
+    <tbody id="market-tbody">
+      <tr><td colspan="12">
+        <div class="loader"><div class="spinner"></div> Loading markets…</div>
+      </td></tr>
+    </tbody>
+  </table>
+  <div id="row-count" style="font-size:11px;color:var(--dim);text-align:right;margin-top:8px;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DETAIL PANEL (slide-in)
+══════════════════════════════════════════════════════════ -->
+<div id="detail-panel">
+  <div class="panel-header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);" id="dp-category">—</div>
+      <button onclick="closePanel()" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="dp-title" style="font-size:15px;font-weight:600;color:#fff;margin-top:6px;line-height:1.4;"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span id="dp-score" class="score-badge" style="font-size:22px;"></span>
+      <span id="dp-kelly" class="kelly-badge"></span>
+      <span id="dp-tier" class="tier-badge"></span>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);" data-info-id="dp-pricing">
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Pricing</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
+      <div><div style="font-size:10px;color:var(--dim);">BID</div><div style="font-size:18px;font-weight:700;color:var(--red);" id="dp-bid">—</div></div>
+      <div><div style="font-size:10px;color:var(--dim);">MID</div><div style="font-size:18px;font-weight:700;color:var(--text);" id="dp-mid">—</div></div>
+      <div><div style="font-size:10px;color:var(--dim);">ASK</div><div style="font-size:18px;font-weight:700;color:var(--green);" id="dp-ask">—</div></div>
+      <div><div style="font-size:10px;color:var(--dim);">SPREAD</div><div style="font-size:18px;font-weight:700;color:var(--amber);" id="dp-spread">—</div></div>
+    </div>
+  </div>
+
+  <!-- Signal breakdown -->
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;">Signal Breakdown</div>
+
+    <div class="signal-row" data-info-id="dp-sig-decay">
+      <div class="signal-label"><span>⏱ Time Decay</span><span id="sig-decay-val">—</span></div>
+      <div class="signal-track"><div class="signal-fill" id="sig-decay-bar" style="background:var(--blue);"></div></div>
+    </div>
+
+    <div class="signal-row" data-info-id="dp-sig-drift">
+      <div class="signal-label"><span>📊 Spread Width</span><span id="sig-drift-val">—</span></div>
+      <div class="signal-track"><div class="signal-fill" id="sig-drift-bar" style="background:var(--purple);"></div></div>
+    </div>
+
+    <div class="signal-row" data-info-id="dp-sig-baseline">
+      <div class="signal-label"><span>🎯 Dist from 50%</span><span id="sig-base-val">—</span></div>
+      <div class="signal-track"><div class="signal-fill" id="sig-base-bar" style="background:var(--amber);"></div></div>
+    </div>
+
+    <div class="signal-row" data-info-id="dp-sig-cat">
+      <div class="signal-label"><span>🏷️ Category Efficiency</span><span id="sig-cat-val">—</span></div>
+      <div class="signal-track"><div class="signal-fill" id="sig-cat-bar" style="background:var(--pink);"></div></div>
+    </div>
+
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);" data-info-id="dp-sig-vol">
+      <div class="signal-label"><span>📦 Volume Weight</span><span id="sig-vol-val">—</span></div>
+      <div class="signal-track"><div class="signal-fill" id="sig-vol-bar" style="background:var(--green);"></div></div>
+    </div>
+  </div>
+
+  <!-- Volume & time -->
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+      <div>
+        <div style="font-size:10px;color:var(--dim);">Volume</div>
+        <div style="font-size:16px;font-weight:700;" id="dp-volume">—</div>
+        <div id="dp-vol-tier" class="tier-badge" style="margin-top:4px;display:inline-block;"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--dim);">Closes</div>
+        <div style="font-size:15px;font-weight:700;" id="dp-close">—</div>
+        <div style="font-size:11px;color:var(--dim);" id="dp-days">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History chart -->
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);" id="dp-history-section" data-info-id="dp-history">
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Score History</div>
+    <canvas id="history-chart" height="100"></canvas>
+    <div id="dp-no-history" style="font-size:12px;color:var(--dim);text-align:center;padding:20px 0;">No history yet — refreshes build this up</div>
+  </div>
+
+  <!-- Actions -->
+  <div style="padding:16px 20px;display:flex;gap:8px;flex-wrap:wrap;">
+    <a id="dp-kalshi-link" href="#" target="_blank" data-info-id="dp-kalshi-link" style="
+      flex:1;background:var(--green);color:#000;
+      border:none;border-radius:8px;padding:10px;
+      font-size:13px;font-weight:700;cursor:pointer;
+      text-decoration:none;text-align:center;
+      transition:opacity 0.15s;display:block;
+    " onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+      Open on Kalshi ↗
+    </a>
+    <button id="dp-watch-btn" onclick="toggleWatchlistFromPanel()" data-info-id="dp-watch-btn" style="
+      flex:1;background:transparent;
+      border:1px solid var(--border);border-radius:8px;padding:10px;
+      font-size:13px;font-weight:700;cursor:pointer;color:var(--text);
+      transition:all 0.15s;
+    ">
+      ☆ Watchlist
+    </button>
+  </div>
+
+  <!-- Event context -->
+  <div style="padding:0 20px 20px;">
+    <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">Event</div>
+    <div id="dp-event" style="font-size:12px;color:var(--text);line-height:1.5;"></div>
+  </div>
+</div>
+
+<!-- Panel overlay -->
+<div id="panel-overlay" onclick="closePanel()" style="
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);z-index:150;
+  backdrop-filter:blur(2px);
+"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ABLETON-STYLE INFO BAR
+══════════════════════════════════════════════════════════ -->
+<div id="info-bar">
+  <span id="info-label">⚡ EDGE DETECTOR</span>
+  <span id="info-sep">│</span>
+  <span id="info-text">Hover over anything to learn what it does.</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════════════════════════ -->
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let allMarkets    = [];
+let filtered      = [];
+let sortCol       = 'score';
+let sortDir       = 'desc';
+let activeCategory = '';
+let watchlist     = JSON.parse(localStorage.getItem('kalshi_watchlist') || '[]');
+let refreshTimer  = null;
+let refreshCountdown = 0;
+let histChart     = null;
+let distChart     = null;
+let currentTicker = null;
+
+const CAT_COLORS = {
+  'Entertainment':          { bg: 'rgba(244,114,182,0.15)', color: '#f472b6' },
+  'Politics':               { bg: 'rgba(167,139,250,0.15)', color: '#a78bfa' },
+  'Economics':              { bg: 'rgba(0,229,160,0.15)',   color: '#00e5a0' },
+  'Science and Technology': { bg: 'rgba(34,211,238,0.15)',  color: '#22d3ee' },
+  'Companies':              { bg: 'rgba(251,146,60,0.15)',   color: '#fb923c' },
+  'World':                  { bg: 'rgba(56,189,248,0.15)',   color: '#38bdf8' },
+};
+
+// ── Fetch ────────────────────────────────────────────────────────────────────
+async function fetchMarkets(force = false) {
+  const url = force ? '/api/markets?refresh=1' : '/api/markets';
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    allMarkets = data.markets || [];
+    updateStats(data);
+    buildCatPills(data.categories || []);
+    applyFilters();
+    loadMovers();
+
+    const ts = data.timestamp ? new Date(data.timestamp) : new Date();
+    document.getElementById('last-update').textContent =
+      'Updated ' + ts.toLocaleTimeString();
+
+    if (force) toast('Markets refreshed ✓');
+  } catch (e) {
+    console.error(e);
+    toast('⚠ Failed to load markets');
+  }
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+function updateStats(data) {
+  document.getElementById('s-total').textContent = data.total || 0;
+  document.getElementById('s-top').textContent   = data.top_score || 0;
+  document.getElementById('s-avg').textContent    = data.avg_score || 0;
+
+  const top = allMarkets[0];
+  document.getElementById('s-top-market').textContent =
+    top ? top.title.substring(0, 35) + '…' : '—';
+
+  buildDistChart(data);
+}
+
+function buildDistChart(data) {
+  const ctx = document.getElementById('dist-chart').getContext('2d');
+  const counts = [
+    allMarkets.filter(m => m.score >= 70).length,
+    allMarkets.filter(m => m.score >= 60 && m.score < 70).length,
+    allMarkets.filter(m => m.score >= 50 && m.score < 60).length,
+    allMarkets.filter(m => m.score < 50).length,
+  ];
+
+  if (distChart) distChart.destroy();
+  distChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['70+', '60–70', '50–60', '<50'],
+      datasets: [{
+        data: counts,
+        backgroundColor: ['#00e5a0', '#38bdf8', '#f59e0b', '#4b5563'],
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: true } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      }
+    }
+  });
+}
+
+// ── Category pills ────────────────────────────────────────────────────────────
+function buildCatPills(cats) {
+  const container = document.getElementById('cat-pills');
+  container.innerHTML = '';
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-pill' + (activeCategory === cat ? ' active' : '');
+    btn.textContent = cat;
+    btn.dataset.cat = cat;
+    btn.onclick = () => setCategory(cat);
+    container.appendChild(btn);
+  });
+}
+
+function setCategory(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.cat === cat);
+  });
+  applyFilters();
+}
+
+// ── Movers ───────────────────────────────────────────────────────────────────
+async function loadMovers() {
+  try {
+    const res   = await fetch('/api/movers');
+    const movers = await res.json();
+    if (!movers.length) return;
+
+    document.getElementById('movers-bar').style.display = 'block';
+    const list = document.getElementById('movers-list');
+    list.innerHTML = '';
+
+    movers.slice(0, 8).forEach(m => {
+      const pill = document.createElement('div');
+      pill.className = 'mover-pill';
+      const sign  = m.delta > 0 ? '+' : '';
+      const color = m.delta > 0 ? 'var(--green)' : 'var(--red)';
+      pill.innerHTML = `
+        <span style="color:var(--dim);max-width:140px;overflow:hidden;text-overflow:ellipsis;">
+          ${m.title.substring(0, 28)}…
+        </span>
+        <span style="color:${color};font-weight:700;">${sign}${m.delta}</span>
+      `;
+      pill.onclick = () => openDetail(m);
+      list.appendChild(pill);
+    });
+  } catch (e) { /* no history yet */ }
+}
+
+// ── Filter + sort ─────────────────────────────────────────────────────────────
+function applyFilters() {
+  const minScore = parseFloat(document.getElementById('min-score').value) || 0;
+  const minVol   = parseInt(document.getElementById('min-vol').value) || 0;
+  const search   = document.getElementById('search').value.toLowerCase();
+  const wlOnly   = document.getElementById('watchlist-only').checked;
+
+  filtered = allMarkets.filter(m => {
+    if (m.score < minScore) return false;
+    if (m.volume < minVol)  return false;
+    if (activeCategory && m.category !== activeCategory) return false;
+    if (wlOnly && !watchlist.includes(m.ticker)) return false;
+    if (search && !m.title.toLowerCase().includes(search) &&
+                  !m.event_title.toLowerCase().includes(search) &&
+                  !m.category.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  doSort();
+  renderTable();
+}
+
+function sortBy(col) {
+  if (sortCol === col) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortCol = col;
+    sortDir = 'desc';
+  }
+
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  const th = document.querySelector(`th[data-col="${col}"]`);
+  if (th) th.classList.add(sortDir === 'desc' ? 'sort-desc' : 'sort-asc');
+
+  doSort();
+  renderTable();
+}
+
+function doSort() {
+  filtered.sort((a, b) => {
+    const va = sortCol === 'score' ? getLiveScore(a) : (a[sortCol] ?? (typeof a[sortCol] === 'number' ? 0 : ''));
+    const vb = sortCol === 'score' ? getLiveScore(b) : (b[sortCol] ?? (typeof b[sortCol] === 'number' ? 0 : ''));
+    if (va < vb) return sortDir === 'desc' ? 1 : -1;
+    if (va > vb) return sortDir === 'desc' ? -1 : 1;
+    return 0;
+  });
+}
+
+// ── Render table ─────────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('market-tbody');
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="12"><div class="empty">No markets match your filters</div></td></tr>`;
+    document.getElementById('row-count').textContent = '';
+    return;
+  }
+
+  const rows = filtered.slice(0, 200).map(m => {
+    const starred  = watchlist.includes(m.ticker);
+    const selected = currentTicker === m.ticker ? 'selected' : '';
+    const cat      = CAT_COLORS[m.category] || { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8' };
+    const ls       = getLiveScore(m);
+    const lk       = getLiveKellySize(ls);
+
+    return `<tr class="${selected}" onclick="openDetail(${JSON.stringify(m).replace(/"/g, '&quot;')})">
+      <td>
+        <button class="star-btn ${starred ? 'starred' : ''}"
+          onclick="event.stopPropagation();toggleWatchlist('${m.ticker}',this)"
+          title="Add to watchlist">
+          ${starred ? '★' : '☆'}
+        </button>
+      </td>
+      <td>
+        <div class="score-badge" style="color:${scoreColor(ls)}">
+          ${ls}
+          <div class="score-bar-wrap">
+            <div class="score-bar-fill"
+              style="width:${ls}%;background:${scoreColor(ls)};"></div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span class="cat-badge"
+          style="background:${cat.bg};color:${cat.color};">
+          ${m.category}
+        </span>
+      </td>
+      <td style="max-width:280px;">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-weight:500;">
+          ${m.title}
+        </div>
+        <div style="font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">
+          ${m.event_title}
+        </div>
+      </td>
+      <td class="hide-mobile"><span class="bid">${m.yes_bid ?? '—'}</span></td>
+      <td class="hide-mobile"><span class="ask">${m.yes_ask ?? '—'}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span style="color:var(--amber);font-weight:600;">${m.spread ?? '—'}</span>
+          <div style="width:28px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;">
+            <div style="width:${Math.min((m.spread||0),100)}%;height:100%;background:var(--amber);border-radius:2px;"></div>
+          </div>
+        </div>
+      </td>
+      <td data-info-id="tier-${m.vol_tier}">
+        <div style="font-weight:600;">${fmtVol(m.volume)}</div>
+        <span class="tier-badge tier-${m.vol_tier}">${m.vol_tier}</span>
+      </td>
+      <td class="hide-mobile" style="color:var(--dim);font-size:12px;" data-info-id="col-weight">${m.vol_weight}x</td>
+      <td class="hide-mobile" style="color:var(--dim);font-size:12px;" data-info-id="col-days">${m.days_to_close ?? '—'}d</td>
+      <td data-info-id="${kellyInfoId(lk)}">
+        <span class="kelly-badge" style="background:${kellyBg(lk)};color:${kellyColor(lk)};">
+          ${lk}
+        </span>
+      </td>
+      <td style="color:var(--dim);font-size:10px;">${m.close?.substring(0,7) || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = rows;
+  document.getElementById('row-count').textContent =
+    `Showing ${Math.min(filtered.length, 200)} of ${filtered.length} markets`;
+}
+
+// ── Detail panel ──────────────────────────────────────────────────────────────
+function openDetail(m) {
+  currentTicker = m.ticker;
+  renderTable();   // highlight selected row
+
+  const cat = CAT_COLORS[m.category] || { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8' };
+
+  document.getElementById('dp-category').textContent  = m.category;
+  document.getElementById('dp-category').style.color  = cat.color;
+  document.getElementById('dp-title').textContent     = m.title;
+  document.getElementById('dp-event').textContent     = m.event_title;
+
+  document.getElementById('dp-score').innerHTML =
+    `<span style="color:${scoreColor(m.score)}">${m.score}</span>`;
+  document.getElementById('dp-kelly').textContent      = m.kelly_size;
+  document.getElementById('dp-kelly').style.background = kellyBg(m.kelly_size);
+  document.getElementById('dp-kelly').style.color      = kellyColor(m.kelly_size);
+
+  const tierEl = document.getElementById('dp-tier');
+  tierEl.textContent  = m.vol_tier;
+  tierEl.className    = `tier-badge tier-${m.vol_tier}`;
+
+  document.getElementById('dp-bid').textContent    = m.yes_bid ?? '—';
+  document.getElementById('dp-mid').textContent    = m.mid ?? '—';
+  document.getElementById('dp-ask').textContent    = m.yes_ask ?? '—';
+  document.getElementById('dp-spread').textContent = m.spread ?? '—';
+  document.getElementById('dp-volume').textContent = fmtVol(m.volume);
+  document.getElementById('dp-close').textContent  = m.close || '—';
+  document.getElementById('dp-days').textContent   = m.days_to_close != null
+    ? `${m.days_to_close} days remaining` : '';
+
+  const volTierEl = document.getElementById('dp-vol-tier');
+  volTierEl.textContent = m.vol_tier;
+  volTierEl.className   = `tier-badge tier-${m.vol_tier}`;
+
+  // Signals
+  setSignalBar('decay',  m.sig_decay,   m.sig_decay + '%');
+  setSignalBar('drift',  m.sig_drift,   m.sig_drift + '%');
+  setSignalBar('base',   m.sig_baseline,m.sig_baseline + '%');
+  setSignalBar('cat',    m.sig_cat,     catEffLabel(m.category));
+
+  const volPct = Math.min(((m.vol_weight - 0.25) / (2.0 - 0.25)) * 100, 100);
+  setSignalBar('vol', volPct, m.vol_weight + 'x');
+
+  // Kalshi link
+  const kLink = document.getElementById('dp-kalshi-link');
+  kLink.href = `https://kalshi.com/markets/${m.ticker}`;
+
+  // Watchlist button
+  const wbtn = document.getElementById('dp-watch-btn');
+  const starred = watchlist.includes(m.ticker);
+  wbtn.textContent = starred ? '★ In Watchlist' : '☆ Add to Watchlist';
+  wbtn.style.color = starred ? 'var(--amber)' : 'var(--text)';
+  wbtn.style.borderColor = starred ? 'var(--amber)' : 'var(--border)';
+
+  loadHistory(m.ticker);
+
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('panel-overlay').style.display = 'block';
+}
+
+function closePanel() {
+  currentTicker = null;
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('panel-overlay').style.display = 'none';
+  document.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+}
+
+function setSignalBar(id, pct, label) {
+  const fill = document.getElementById(`sig-${id}-bar`);
+  const val  = document.getElementById(`sig-${id}-val`);
+  if (fill) fill.style.width = Math.min(pct || 0, 100) + '%';
+  if (val)  val.textContent  = label;
+}
+
+function catEffLabel(cat) {
+  const map = {
+    'Entertainment': '1.20× boost',
+    'Companies': '1.10× boost',
+    'Science and Technology': '1.05× boost',
+    'World': '1.00× neutral',
+    'Economics': '0.90× dampen',
+    'Politics': '0.80× dampen',
+  };
+  return map[cat] || '1.00×';
+}
+
+async function loadHistory(ticker) {
+  if (histChart) { histChart.destroy(); histChart = null; }
+  document.getElementById('dp-no-history').style.display = 'block';
+
+  try {
+    const res  = await fetch(`/api/history/${encodeURIComponent(ticker)}`);
+    const hist = await res.json();
+
+    if (!hist.length) return;
+
+    document.getElementById('dp-no-history').style.display = 'none';
+    const ctx = document.getElementById('history-chart').getContext('2d');
+    histChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: hist.map(h => new Date(h.ts).toLocaleString()),
+        datasets: [{
+          data: hist.map(h => h.score),
+          borderColor: '#00e5a0',
+          backgroundColor: 'rgba(0,229,160,0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#00e5a0',
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            min: 0, max: 100,
+            ticks: { color: '#6b82a8', font: { size: 10 } },
+            grid: { color: '#1e2d45' },
+          }
+        }
+      }
+    });
+  } catch (e) { /* no history */ }
+}
+
+// ── Watchlist ─────────────────────────────────────────────────────────────────
+function toggleWatchlist(ticker, btn) {
+  const idx = watchlist.indexOf(ticker);
+  if (idx >= 0) {
+    watchlist.splice(idx, 1);
+    if (btn) { btn.textContent = '☆'; btn.classList.remove('starred'); }
+  } else {
+    watchlist.push(ticker);
+    if (btn) { btn.textContent = '★'; btn.classList.add('starred'); }
+  }
+  localStorage.setItem('kalshi_watchlist', JSON.stringify(watchlist));
+
+  // Update panel button if open
+  if (currentTicker === ticker) {
+    const wbtn = document.getElementById('dp-watch-btn');
+    const starred = watchlist.includes(ticker);
+    wbtn.textContent = starred ? '★ In Watchlist' : '☆ Add to Watchlist';
+    wbtn.style.color = starred ? 'var(--amber)' : 'var(--text)';
+    wbtn.style.borderColor = starred ? 'var(--amber)' : 'var(--border)';
+  }
+
+  if (document.getElementById('watchlist-only').checked) applyFilters();
+}
+
+function toggleWatchlistFromPanel() {
+  if (!currentTicker) return;
+  const row = allMarkets.find(m => m.ticker === currentTicker);
+  if (row) {
+    const btn = document.querySelector(`tr.selected .star-btn`);
+    toggleWatchlist(currentTicker, btn);
+  }
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const cols = ['score','category','title','yes_bid','yes_ask','spread','volume',
+                'vol_tier','vol_weight','days_to_close','kelly_size','close','ticker'];
+  const header = cols.join(',');
+  const rows = filtered.map(m =>
+    cols.map(c => {
+      const v = m[c] ?? '';
+      return typeof v === 'string' && v.includes(',') ? `"${v}"` : v;
+    }).join(',')
+  );
+  const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `kalshi_edge_${new Date().toISOString().slice(0,16).replace('T','_')}.csv`;
+  a.click();
+}
+
+// ── Auto-refresh ──────────────────────────────────────────────────────────────
+function setupRefresh() {
+  const sel = document.getElementById('refresh-select');
+  sel.onchange = () => {
+    clearInterval(refreshTimer);
+    const secs = parseInt(sel.value);
+    if (!secs) {
+      document.getElementById('refresh-ring').style.strokeDashoffset = 82;
+      return;
+    }
+    startRefreshCycle(secs);
+  };
+  startRefreshCycle(60);
+}
+
+function startRefreshCycle(secs) {
+  clearInterval(refreshTimer);
+  refreshCountdown = secs;
+  const ring = document.getElementById('refresh-ring');
+  const circ = 82;
+
+  refreshTimer = setInterval(() => {
+    refreshCountdown--;
+    const pct = refreshCountdown / secs;
+    ring.style.strokeDashoffset = circ * (1 - pct);
+
+    if (refreshCountdown <= 0) {
+      fetchMarkets(true);
+      refreshCountdown = secs;
+    }
+  }, 1000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function scoreColor(s) {
+  if (s >= 70) return 'var(--green)';
+  if (s >= 60) return 'var(--blue)';
+  if (s >= 50) return 'var(--amber)';
+  return 'var(--dim)';
+}
+
+function kellyBg(k) {
+  if (k === '2–3%') return 'rgba(0,229,160,0.15)';
+  if (k === '1–2%') return 'rgba(56,189,248,0.15)';
+  if (k === '0.5–1%') return 'rgba(245,158,11,0.15)';
+  return 'rgba(107,130,168,0.1)';
+}
+
+function kellyColor(k) {
+  if (k === '2–3%') return 'var(--green)';
+  if (k === '1–2%') return 'var(--blue)';
+  if (k === '0.5–1%') return 'var(--amber)';
+  return 'var(--dim)';
+}
+
+function kellyInfoId(k) {
+  if (k === '2–3%')   return 'kelly-strong';
+  if (k === '1–2%')   return 'kelly-moderate';
+  if (k === '0.5–1%') return 'kelly-slight';
+  return 'kelly-watch';
+}
+
+function fmtVol(v) {
+  if (!v) return '0';
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+  if (v >= 1_000)     return (v / 1_000).toFixed(1) + 'K';
+  return v.toString();
+}
+
+function toast(msg, dur = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── Pedal / Knob System ───────────────────────────────────────────────────────
+let bypassed   = false;
+let pedalOpen  = false;
+const knobState = { signal: 50, depth: 50, time: 50 };
+
+function knobToSignal(v) { return (v / 100) * 2.0; }
+function knobToDepth(v)  { return 1.0 + (v / 100) * 2.0; }
+function knobToTime(v)   { return (v / 100) * 2.0; }
+function valToAngle(v)   { return (v / 100) * 280 - 140; }
+
+function setKnobAngle(id, v) {
+  const el = document.getElementById('knob-' + id);
+  if (el) el.style.transform = `rotate(${valToAngle(v)}deg)`;
+}
+
+function updateReadout(id) {
+  const v = knobState[id];
+  const el = document.getElementById('readout-' + id);
+  if (!el) return;
+  if (id === 'signal') el.textContent = knobToSignal(v).toFixed(2) + '×';
+  if (id === 'depth')  el.textContent = knobToDepth(v).toFixed(2) + '×';
+  if (id === 'time')   el.textContent = knobToTime(v).toFixed(2) + '×';
+}
+
+function initKnob(id, defaultVal) {
+  knobState[id] = defaultVal;
+  setKnobAngle(id, defaultVal);
+  updateReadout(id);
+
+  const el = document.getElementById('knob-' + id);
+  if (!el) return;
+
+  let dragStartY, dragStartVal;
+
+  el.addEventListener('mousedown', e => {
+    dragStartY   = e.clientY;
+    dragStartVal = knobState[id];
+    el.classList.add('dragging');
+    e.preventDefault();
+
+    const onMove = e => {
+      const delta   = (dragStartY - e.clientY) * 0.6;
+      knobState[id] = Math.max(0, Math.min(100, dragStartVal + delta));
+      setKnobAngle(id, knobState[id]);
+      updateReadout(id);
+      onKnobChange();
+    };
+
+    const onUp = () => {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  el.addEventListener('dblclick', () => {
+    knobState[id] = defaultVal;
+    setKnobAngle(id, defaultVal);
+    updateReadout(id);
+    onKnobChange();
+    toast(`${id.charAt(0).toUpperCase() + id.slice(1)} reset ✓`);
+  });
+}
+
+function onKnobChange() {
+  if (bypassed) return;
+  const atDefault =
+    Math.abs(knobState.signal - 50) < 0.5 &&
+    Math.abs(knobState.depth  - 50) < 0.5 &&
+    Math.abs(knobState.time   - 50) < 0.5;
+  document.getElementById('live-indicator').classList.toggle('show', !atDefault);
+  doSort();
+  renderTable();
+}
+
+function toggleBypass() {
+  bypassed = !bypassed;
+  document.getElementById('bypass-btn').classList.toggle('active', bypassed);
+  document.getElementById('pedal-led').classList.toggle('off', bypassed);
+  document.getElementById('live-indicator').classList.toggle('show', !bypassed && isKnobsModified());
+  doSort();
+  renderTable();
+  toast(bypassed ? 'Bypass ON — raw scores' : 'Bypass OFF — knobs active');
+}
+
+function isKnobsModified() {
+  return !(
+    Math.abs(knobState.signal - 50) < 0.5 &&
+    Math.abs(knobState.depth  - 50) < 0.5 &&
+    Math.abs(knobState.time   - 50) < 0.5
+  );
+}
+
+function togglePedal() {
+  pedalOpen = !pedalOpen;
+  document.getElementById('pedal-section').classList.toggle('open', pedalOpen);
+  document.getElementById('fx-toggle-btn').classList.toggle('active', pedalOpen);
+}
+
+// ── Live rescoring ────────────────────────────────────────────────────────────
+function getLiveVolWeight(volume, depthMax) {
+  const v = volume || 0;
+  if (v === 0)     return depthMax * 0.75;
+  if (v <= 500)    return depthMax;
+  if (v >= 100000) return 0.25;
+  const ratio = (v - 500) / (100000 - 500);
+  return Math.max(depthMax - ratio * (depthMax - 0.25), 0.25);
+}
+
+function getLiveScore(m) {
+  if (bypassed) return m.score;
+  const gainMult = knobToSignal(knobState.signal);
+  const depthMax = knobToDepth(knobState.depth);
+  const timeW    = knobToTime(knobState.time);
+  if (gainMult < 0.01) return 0;
+  const decay    = (m.sig_decay    || 0) / 100;
+  const drift    = (m.sig_drift    || 0) / 100;
+  const baseline = (m.sig_baseline || 0) / 100;
+  const catMult  = 0.80 + ((m.sig_cat || 0) / 100) * 0.40;
+  const totalW   = timeW + 1 + 1;
+  const raw      = (decay * timeW + drift + baseline) / totalW;
+  const volW     = getLiveVolWeight(m.volume, depthMax);
+  return Math.round(Math.min(raw * catMult * volW * gainMult * 50, 100) * 10) / 10;
+}
+
+function getLiveKellySize(score) {
+  if (score >= 70)  return '2–3%';
+  if (score >= 60)  return '1–2%';
+  if (score >= 50)  return '0.5–1%';
+  return 'watch';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initKnob('signal', 50);
+  initKnob('depth',  50);
+  initKnob('time',   50);
+});
+
+// ── Ableton-style info bar ────────────────────────────────────────────────────
+const INFO = {
+  'btn-refresh':      { label: 'Refresh Now',         text: 'Force-fetch fresh data from Kalshi right now. Bypasses the 5-minute cache and pulls live prices.' },
+  'refresh-select':   { label: 'Auto-Refresh',        text: 'How often the dashboard automatically re-scans Kalshi. Markets move — keep this on to catch new opportunities.' },
+  'btn-export':       { label: 'Export CSV',           text: 'Download the current filtered view as a .csv file. Open in Excel, Sheets, or any data tool.' },
+  'refresh-ring':     { label: 'Refresh Timer',        text: 'Visual countdown to the next auto-refresh. The green arc drains as time runs out — resets on each fetch.' },
+  'stat-total':       { label: 'Markets Scored',       text: 'Total Kalshi markets that had real bid/ask data and a non-zero edge score this scan.' },
+  'stat-top':         { label: 'Top Score',            text: 'The highest mispricing score found right now. The market at the top of your table. Click to investigate it.' },
+  'stat-avg':         { label: 'Avg Score',            text: 'Average edge score across all scored markets today. Lower average = markets are more efficiently priced overall.' },
+  'stat-dist':        { label: 'Score Distribution',   text: 'Green = strong edge (70+) · Blue = moderate (60–70) · Amber = slight (50–60) · Gray = watch only (<50).' },
+  'min-score':        { label: 'Min Score Filter',     text: 'Hide markets below this score. Raise to 60+ to focus on only your strongest edge opportunities.' },
+  'min-vol':          { label: 'Min Volume Filter',    text: 'Hide markets with fewer contracts traded than this. Useful to exclude ghost markets with zero real activity.' },
+  'search':           { label: 'Search',               text: 'Filter by keyword in the market title, event name, or category. Instant — no need to hit Enter.' },
+  'watchlist-only':   { label: 'Watchlist Filter',     text: 'Show only your starred markets. Watchlist is saved in your browser and persists across sessions.' },
+  'col-score':        { label: 'Edge Score',           text: 'Combined mispricing signal 0–100. Blends time decay, spread width, distance from 50%, category efficiency, and volume weight. Click to sort.' },
+  'col-category':     { label: 'Category',             text: 'Kalshi market category. Entertainment and niche categories score higher — less analyst coverage = more edge.' },
+  'col-title':        { label: 'Market',               text: 'The market question and its parent event. Click any row to open the full signal breakdown panel.' },
+  'col-bid':          { label: 'Bid',                  text: 'Highest price buyers are willing to pay for YES contracts. In cents out of 100.' },
+  'col-ask':          { label: 'Ask',                  text: 'Lowest price sellers will accept for YES contracts. You buy at the ask. In cents out of 100.' },
+  'col-spread':       { label: 'Spread',               text: 'Gap between bid and ask in cents. Wide spread = market hasn\'t converged yet. One of your four scoring signals.' },
+  'col-volume':       { label: 'Volume',               text: 'Total contracts ever traded in this market. Low volume = thin market = your signal gets boosted up to 2x.' },
+  'col-weight':       { label: 'Vol Weight',           text: 'Volume multiplier on the score. Thin market (few contracts) = 2.0x boost. Deep market (100K+) = 0.25x dampen.' },
+  'col-days':         { label: 'Days to Close',        text: 'Days until this market resolves. More time remaining = more runway for your edge to play out.' },
+  'col-size':         { label: 'Suggested Size',       text: 'Kelly-inspired position sizing as % of bankroll. Based on score strength — not a guarantee. Always do your own research.' },
+  'tier-ghost':       { label: 'Ghost Market',         text: 'Zero contracts traded. No price discovery has happened. High mispricing potential but you may be the first in.' },
+  'tier-thin':        { label: 'Thin Market',          text: 'Under 100 contracts. Very little activity. Big edge potential — but limited liquidity to size into.' },
+  'tier-active':      { label: 'Active Market',        text: '100–1,000 contracts. Some crowd activity. Good balance of edge potential and tradability.' },
+  'tier-liquid':      { label: 'Liquid Market',        text: '1,000–10,000 contracts. Real liquidity. The crowd is engaged but real edge is still possible.' },
+  'tier-deep':        { label: 'Deep Market',          text: 'Over 10,000 contracts. Highly efficient. Hard to find genuine edge here — the crowd has done the work.' },
+  'kelly-strong':     { label: 'Strong Edge (2–3%)',   text: 'Score ≥ 70. Multiple signals align. Consider allocating 2–3% of bankroll. This is your A-tier opportunity.' },
+  'kelly-moderate':   { label: 'Moderate Edge (1–2%)', text: 'Score 60–69. Solid signal but not all pedals maxed. Consider 1–2% of bankroll.' },
+  'kelly-slight':     { label: 'Slight Edge (0.5–1%)', text: 'Score 50–59. Something is there but it\'s thin. Half a percent max or paper trade to track it.' },
+  'kelly-watch':      { label: 'Watch Only',           text: 'Score below 50. Track this market for movement but don\'t size in. Could improve as conditions change.' },
+  'dp-pricing':       { label: 'Live Pricing',         text: 'Current bid/ask/mid/spread from Kalshi. Bid = what buyers offer. Ask = what sellers want. Mid = midpoint.' },
+  'dp-sig-decay':     { label: 'Time Decay Signal',    text: 'How far from resolution this market is. More time remaining = more room for mispricing to persist and pay off.' },
+  'dp-sig-drift':     { label: 'Spread Signal',        text: 'How wide the bid/ask spread is right now. Wide = market makers are uncertain = higher chance of real edge.' },
+  'dp-sig-baseline':  { label: 'Baseline Signal',      text: 'Distance from 50/50. Near 50% = genuine uncertainty = neither side has conviction = edge potential peaks.' },
+  'dp-sig-cat':       { label: 'Category Signal',      text: 'Efficiency adjustment for this category. Entertainment markets get a 1.2x boost — fewer sharp eyes watching them.' },
+  'dp-sig-vol':       { label: 'Volume Weight',        text: 'How thin this market is. Under 500 contracts = 2x boost. Over 100K = 0.25x dampen. Pro-rated between.' },
+  'dp-history':       { label: 'Score History',        text: 'How this market\'s edge score has trended across your refresh history. Rising = opportunity growing. Falling = crowd correcting.' },
+  'dp-kalshi-link':   { label: 'Open on Kalshi',       text: 'Jump directly to this market on Kalshi.com — see the full order book, trade, and track resolution.' },
+  'dp-watch-btn':     { label: 'Watchlist',            text: 'Star this market to save it. Shows up when you toggle "Watchlist only" in the filter bar. Saved in your browser.' },
+  'movers-bar':       { label: 'Top Movers',           text: 'Markets whose edge scores changed the most since the last refresh. Green delta = gaining edge. Red = losing edge.' },
+  'star-btn':         { label: 'Watchlist Star',       text: 'Star any market to add it to your personal watchlist. Persists in your browser across sessions.' },
+  'refresh-select':   { label: 'Auto-Refresh',         text: 'How often the dashboard auto-refreshes market data from Kalshi. Shorter intervals catch faster-moving markets.' },
+  'fx-toggle':        { label: 'FX Signal Processor',  text: 'Open the KE-1 pedal. Three knobs let you reshape how markets are scored in real time — no re-fetching. ● LIVE lights up when knobs are off-center.' },
+  'pedal-body':       { label: 'KE-1 Signal Chain',    text: 'Drag any knob up to increase, down to decrease. Double-click to reset a knob to default. BYPASS reverts to raw server scores.' },
+  'knob-signal':      { label: 'Signal — Gain',        text: 'Overall score multiplier. Center (1.0×) = no change. Turn up to amplify all signals to 2.0×. Turn down to 0× to silence everything.' },
+  'knob-depth':       { label: 'Depth — Vol Weight',   text: 'Volume pro-rating aggressiveness. Center = 2.0× boost for thin markets (default). Max = 3.0×. Min = 1.0× (flat — ignores volume).' },
+  'knob-time':        { label: 'Time — Decay Weight',  text: 'How heavily time-remaining weighs in the score. Center = balanced. Max = 2× — favors far-out markets. Min = 0× — pure spread + baseline.' },
+  'pedal-bypass':     { label: 'Bypass Switch',        text: 'Bypass all three knobs and show raw server scores exactly as Kalshi calculated them. LED goes dim. Click again to re-engage.' },
+};
+
+const DEFAULT_INFO = { label: '⚡ EDGE DETECTOR', text: 'Hover over anything to learn what it does.' };
+
+function setInfoBar(label, text) {
+  document.getElementById('info-label').textContent = label;
+  document.getElementById('info-text').textContent  = text;
+}
+
+document.body.addEventListener('mouseover', e => {
+  let el = e.target;
+  while (el && el !== document.body) {
+    const id = el.dataset && el.dataset.infoId;
+    if (id && INFO[id]) {
+      setInfoBar(INFO[id].label, INFO[id].text);
+      return;
+    }
+    el = el.parentElement;
+  }
+  setInfoBar(DEFAULT_INFO.label, DEFAULT_INFO.text);
+});
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePanel();
+  if (e.key === 'r' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); fetchMarkets(true); }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+fetchMarkets(false);
+setupRefresh();
+</script>
+</body>
+</html>
