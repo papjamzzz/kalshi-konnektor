@@ -6,7 +6,7 @@
 #          make zip     → create distributable zip
 # ──────────────────────────────────────────────────────────────
 
-.PHONY: setup run clean zip
+.PHONY: setup run clean zip push
 
 setup:
 	@python3 -m venv venv
@@ -20,6 +20,11 @@ clean:
 	@find . -name "*.pyc" -delete
 	@find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 	@echo "✓ Cleaned"
+
+push:
+	git add .
+	git commit -m "$(m)"
+	git push origin main
 
 zip:
 	@cd .. && zip -r kalshi-edge-$$(date +%Y%m%d).zip kalshi-edge \

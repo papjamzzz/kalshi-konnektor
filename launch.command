@@ -7,6 +7,7 @@
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
+pkill -f "python3 app.py" 2>/dev/null
 
 echo ""
 echo "══════════════════════════════════════════"
