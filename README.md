@@ -4,7 +4,7 @@
 
 ![kalshi konnektor dashboard](static/screenshots/dashboard.png)
 
-A real-time edge detection dashboard for Kalshi prediction markets. Scores every open market across four independent signals, surfaces the highest-conviction opportunities, and lets you tune the scoring engine live — without restarting anything.
+A real-time edge detection dashboard for Kalshi prediction markets. Scores every open market across four independent signals, surfaces the highest-conviction opportunities, and lets you tune the scoring engine live — without restarting anything.  YOU ALONE DIAL IN THAT SPOT UNIQUE TO YOU AND SORT THE JUNK (MOST OF IT) FROM THE TRULY OFF PRICED FUTURES.
 
 ---
 
