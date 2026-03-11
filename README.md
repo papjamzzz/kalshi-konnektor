@@ -128,6 +128,12 @@ KALSHI_API_KEY=your-key-here
 
 ---
 
+## Disclaimer
+
+This tool is for research and signal exploration only. It does not place trades, manage funds, or guarantee outcomes. Not financial advice.
+
+---
+
 ## License
 
 MIT
