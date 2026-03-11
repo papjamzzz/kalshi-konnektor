@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 data/
+.DS_Store
+*.zip
+venv/

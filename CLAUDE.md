@@ -44,10 +44,14 @@ cd ~/kalshi-edge
 make run
 ```
 
+## Pipeline Compliance
+✅ Follows ~/.claude/PIPELINE.md standard
+- .gitignore ✅ | Makefile w/ push target ✅ | launch.command w/ pkill ✅ | .env.example ✅
+
 ## What's Next (pick up here)
 - [ ] Add logo.png to static/ when user gets their logo
-- [ ] Set up git credential storage so token isn't re-entered every push
 - [ ] Update README.md on GitHub with real description
+- [ ] Audit dashboard — confirm live data flowing, knobs working
 - [ ] Consider: private vs public repo decision
 
 ## Key Technical Decisions
