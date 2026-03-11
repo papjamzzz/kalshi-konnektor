@@ -1107,6 +1107,8 @@ function updateStats(data) {
   document.getElementById('s-total').textContent = data.total || 0;
   document.getElementById('s-top').textContent   = data.top_score || 0;
   document.getElementById('s-avg').textContent    = data.avg_score || 0;
+  const sub = document.getElementById('s-showing');
+  if (sub) sub.textContent = (data.total > 0) ? 'open markets scored' : 'loading…';
 
   const top = allMarkets[0];
   document.getElementById('s-top-market').textContent =
