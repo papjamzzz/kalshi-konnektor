@@ -1,4 +1,4 @@
-# ⚡ Kalshi Edge
+# kalshi konnektor
 
 > **See what the market misses.**
 
