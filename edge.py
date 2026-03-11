@@ -243,6 +243,7 @@ def score_market(m):
     return {
         # Identity
         "ticker":        m.get("ticker", ""),
+        "event_ticker":  m.get("event_ticker", ""),
         "category":      category,
         "event_title":   m.get("_event_title", ""),
         "title":         m.get("title", ""),
