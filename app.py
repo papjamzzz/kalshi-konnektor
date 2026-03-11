@@ -19,7 +19,7 @@ app = Flask(__name__)
 _cache = {
     "data":      None,
     "timestamp": 0,
-    "ttl":       300,   # seconds before stale (5 min)
+    "ttl":       600,   # seconds before stale (10 min)
     "fetching":  False,
 }
 
@@ -43,6 +43,11 @@ def refresh_cache(force=False):
         # Persist snapshot for historical tracking
         _save_snapshot(markets)
         return markets
+    except Exception as e:
+        # On any fetch error (rate limit, network, etc.) return stale data
+        # rather than crashing — dashboard stays usable
+        print(f"  ⚠ Fetch error (returning stale): {e}")
+        return _cache["data"] or []
     finally:
         _cache["fetching"] = False
 

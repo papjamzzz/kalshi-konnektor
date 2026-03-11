@@ -4,6 +4,7 @@ Four-pedal signal chain + volume pro-rating + category efficiency weight.
 """
 
 import os
+import time
 import requests
 from datetime import datetime, timezone
 from dotenv import load_dotenv
@@ -12,10 +13,13 @@ load_dotenv()
 
 API_KEY  = os.getenv("KALSHI_API_KEY")
 BASE_URL = "https://api.elections.kalshi.com/trade-api/v2"
-HEADERS  = {
+
+# Reuse TCP connections across all requests
+_SESSION = requests.Session()
+_SESSION.headers.update({
     "Authorization": f"Token {API_KEY}",
-    "Content-Type": "application/json",
-}
+    "Content-Type":  "application/json",
+})
 
 # ── Volume bounds ────────────────────────────────────────────────────────────
 LOW_VOL  = 500
@@ -105,46 +109,91 @@ def vol_tier_label(volume):
     return "deep"
 
 
-# ── Data fetching ────────────────────────────────────────────────────────────
-def fetch_markets_by_event(max_events=100):
-    """Pull events → fetch their markets. Returns raw market list with category attached."""
-    all_markets = []
+# ── Fast paginator with retry ────────────────────────────────────────────────
+_REQ_DELAY = 0.15   # 150 ms between requests → ~6 req/s, well under rate limit
+
+def _paginate(endpoint, params, list_key, max_items=None):
+    """
+    Page through a Kalshi endpoint sequentially, returning all items.
+    Stops early if max_items is reached. Retries on 429 with exponential backoff.
+    Sleeps briefly between pages to stay under Kalshi's rate limit.
+    """
+    items  = []
     cursor = None
 
     while True:
-        params = {"status": "open", "limit": 100}
+        p = {**params}
         if cursor:
-            params["cursor"] = cursor
+            p["cursor"] = cursor
 
-        resp = requests.get(f"{BASE_URL}/events", headers=HEADERS, params=params)
-        resp.raise_for_status()
-        data    = resp.json()
-        events  = data.get("events", [])
-
-        if not events:
-            break
-
-        for event in events:
-            if len(all_markets) >= max_events * 8:
+        for attempt in range(4):
+            try:
+                r = _SESSION.get(f"{BASE_URL}/{endpoint}", params=p, timeout=15)
+                if r.status_code == 429:
+                    wait = 2 ** attempt
+                    print(f"  ⏳ 429 on /{endpoint} — backing off {wait}s")
+                    time.sleep(wait)
+                    continue
+                r.raise_for_status()
+                data = r.json()
                 break
-            ticker = event.get("event_ticker", "")
-            mresp  = requests.get(
-                f"{BASE_URL}/markets",
-                headers=HEADERS,
-                params={"event_ticker": ticker, "status": "open"},
-            )
-            if mresp.status_code == 200:
-                ms = mresp.json().get("markets", [])
-                for m in ms:
-                    m["_category"]    = event.get("category", "")
-                    m["_event_title"] = event.get("title", "")
-                all_markets.extend(ms)
+            except requests.exceptions.HTTPError:
+                if attempt == 3:
+                    return items
+                time.sleep(2 ** attempt)
+        else:
+            return items
 
+        items.extend(data.get(list_key, []))
         cursor = data.get("cursor")
-        if not cursor or len(all_markets) >= max_events * 8:
+
+        if not cursor:
+            break
+        if max_items and len(items) >= max_items:
             break
 
-    return all_markets
+        time.sleep(_REQ_DELAY)
+
+    return items
+
+
+# ── Data fetching ────────────────────────────────────────────────────────────
+def fetch_markets_fast():
+    """
+    Optimized fetch — events-first then direct market pagination.
+
+    Old: 1 events page + 1 call PER event = 100+ requests
+    New: paginate /events (3-5 calls) + paginate /markets capped at 2000 (2 calls)
+         = ~7 calls total, paced at 150ms → under 2 seconds
+    """
+    # Step 1: fetch all events → build category lookup (~3-5 calls)
+    events = _paginate("events", {"status": "open", "limit": 200}, "events")
+    print(f"  → {len(events)} events")
+
+    cat_map = {
+        e["event_ticker"]: {
+            "category": e.get("category", ""),
+            "title":    e.get("title", ""),
+        }
+        for e in events
+    }
+
+    # Step 2: fetch open markets directly, capped at 2000 (~2 calls)
+    markets = _paginate(
+        "markets",
+        {"status": "open", "limit": 1000},
+        "markets",
+        max_items=2000,
+    )
+    print(f"  → {len(markets)} markets")
+
+    # Step 3: join category data
+    for m in markets:
+        info = cat_map.get(m.get("event_ticker", ""), {})
+        m["_category"]    = info.get("category", "")
+        m["_event_title"] = info.get("title", "")
+
+    return markets
 
 
 # ── Scoring ──────────────────────────────────────────────────────────────────
@@ -213,7 +262,7 @@ def score_market(m):
         "sig_decay":     round(p1_decay * 100, 1),
         "sig_drift":     round(p2_drift * 100, 1),
         "sig_baseline":  round(p3_baseline * 100, 1),
-        "sig_cat":       round((p4_cat - 0.8) / (1.2 - 0.8) * 100, 1),  # normalize 0.8–1.2 → 0–100
+        "sig_cat":       round((p4_cat - 0.8) / (1.2 - 0.8) * 100, 1),
         # Final score
         "score":         score,
         "kelly_size":    size,
@@ -222,9 +271,9 @@ def score_market(m):
 
 def get_scored_markets(max_events=100):
     """Fetch + score all markets. Returns sorted list."""
-    raw     = fetch_markets_by_event(max_events)
-    scored  = [score_market(m) for m in raw]
-    scored  = [m for m in scored if m is not None]
+    raw    = fetch_markets_fast()
+    scored = [score_market(m) for m in raw]
+    scored = [m for m in scored if m is not None]
     scored.sort(key=lambda x: x["score"], reverse=True)
     return scored
 
@@ -238,8 +287,10 @@ if __name__ == "__main__":
     print(f"{'='*70}\n")
     print("Fetching markets...")
 
+    t0      = time.time()
     markets = get_scored_markets()
-    print(f"Scored {len(markets)} markets\n")
+    elapsed = round(time.time() - t0, 2)
+    print(f"Scored {len(markets)} markets in {elapsed}s\n")
 
     df = pd.DataFrame(markets)
     cols = ["score", "category", "title", "yes_bid", "yes_ask",
