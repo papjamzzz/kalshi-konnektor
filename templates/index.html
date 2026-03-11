@@ -1373,7 +1373,7 @@ function openDetail(m) {
 
   // Kalshi link
   const kLink = document.getElementById('dp-kalshi-link');
-  kLink.href = `https://kalshi.com/markets/${m.ticker}`;
+  kLink.href = `https://kalshi.com/markets/${(m.event_ticker || m.ticker).toLowerCase()}`;
 
   // Watchlist button
   const wbtn = document.getElementById('dp-watch-btn');
