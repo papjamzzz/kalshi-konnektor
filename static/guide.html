@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Kalshi Konnektor — Operator's Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:     #08090e;
+      --card:   #13161f;
+      --border: #1e2230;
+      --green:  #00d595;
+      --blue:   #3861fb;
+      --amber:  #f5a623;
+      --red:    #f6465d;
+      --purple: #a78bfa;
+      --dim:    #6b7280;
+      --sub:    #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      padding: 40px 32px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .header-left .eyebrow { font-size: 11px; letter-spacing: 0.14em; color: var(--green); font-weight: 700; margin-bottom: 4px; }
+    .header-left h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.03em; }
+    .header-left .sub { font-size: 14px; color: var(--sub); margin-top: 4px; }
+    .header-badge {
+      background: linear-gradient(135deg, rgba(0,213,149,0.12), rgba(56,97,251,0.08));
+      border: 1px solid rgba(0,213,149,0.2);
+      border-radius: 12px;
+      padding: 12px 20px;
+      text-align: center;
+    }
+    .header-badge .badge-num { font-size: 32px; font-weight: 900; color: var(--green); line-height: 1; }
+    .header-badge .badge-label { font-size: 10px; color: var(--sub); letter-spacing: 0.1em; margin-top: 2px; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: var(--dim);
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    /* ── Signals ── */
+    .signal { border-left: 3px solid; padding: 14px 14px 14px 16px; border-radius: 10px; background: var(--card); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .signal-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .signal-icon { font-size: 18px; }
+    .signal-name { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; }
+    .signal-sub2 { font-size: 10px; color: var(--dim); margin-top: 1px; }
+    .signal-body2 { font-size: 12px; color: var(--sub); line-height: 1.6; }
+    .signal-tip2 { font-size: 10px; font-weight: 700; color: var(--green); margin-top: 8px; background: rgba(0,213,149,0.07); padding: 4px 8px; border-radius: 5px; letter-spacing: 0.04em; }
+
+    /* ── Score tiers ── */
+    .tier { border-radius: 10px; border: 1px solid; padding: 12px 14px; }
+    .tier-num { font-size: 20px; font-weight: 900; }
+    .tier-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; display: inline-block; margin: 4px 0 6px; }
+    .tier-desc { font-size: 11px; color: var(--sub); line-height: 1.6; }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 10px; }
+    .step { display: flex; gap: 12px; align-items: flex-start; }
+    .step-n { font-size: 10px; font-weight: 900; color: var(--green); background: rgba(0,213,149,0.1); border: 1px solid rgba(0,213,149,0.2); border-radius: 5px; padding: 3px 7px; flex-shrink: 0; letter-spacing: 0.04em; }
+    .step-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .step-body { font-size: 12px; color: var(--sub); line-height: 1.5; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-left { font-size: 11px; color: var(--dim); }
+    .footer-right { font-size: 11px; color: var(--dim); text-align: right; }
+    .footer a { color: var(--green); text-decoration: none; }
+
+    /* ── Volume bar ── */
+    .vol-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+    .vol-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .vol-fill { height: 100%; border-radius: 3px; }
+    .vol-label { color: var(--sub); min-width: 90px; }
+    .vol-val { color: var(--green); font-weight: 700; min-width: 28px; text-align: right; }
+
+    /* Print */
+    @media print {
+      body { background: #fff; color: #000; padding: 20px; }
+      .card, .signal, .tier { background: #f9f9f9 !important; border-color: #ddd !important; }
+      .header-badge { background: #f0fdf4 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-left">
+    <div class="eyebrow">OPERATOR'S MANUAL · v1.0</div>
+    <h1>Kalshi Konnektor</h1>
+    <div class="sub">See what the market misses. · <span style="color:var(--green)">localhost:5555</span></div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <div class="header-badge">
+      <div class="badge-num">4</div>
+      <div class="badge-label">SIGNAL PEDALS</div>
+    </div>
+    <div class="header-badge">
+      <div class="badge-num">0–100</div>
+      <div class="badge-label">EDGE SCORE</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:24px;">
+
+  <!-- LEFT COLUMN -->
+  <div>
+
+    <!-- QUICK START -->
+    <div class="section-label">QUICK START — 5 STEPS</div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="steps">
+        <div class="step">
+          <div class="step-n">01</div>
+          <div><div class="step-title">Launch the app</div><div class="step-body">Double-click KalshiEdge on Desktop. Dashboard is live instantly — data loads in ~20 seconds.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <div><div class="step-title">Read the table</div><div class="step-body">Markets sort by score. Score 70+ = strong mispricing. Click any row for the full breakdown.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <div><div class="step-title">Dial the FX knobs</div><div class="step-body">Hit FX to open the pedal board. Adjust SIGNAL, DEPTH, and TIME to match your trading style.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-n">04</div>
+          <div><div class="step-title">Jump to Kalshi</div><div class="step-body">Click a market → Open on Kalshi → you land directly on the order book. Trade.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-n">05</div>
+          <div><div class="step-title">Star and track</div><div class="step-body">Star markets you're watching. Top Movers shows score changes each refresh. ⌘R to force-refresh.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCORE TIERS -->
+    <div class="section-label">SCORE TIERS — KELLY SIZING</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+
+      <div class="tier" style="border-color:var(--green);background:rgba(0,213,149,0.05);">
+        <div class="tier-num" style="color:var(--green);">70–100</div>
+        <div class="tier-pill" style="background:var(--green);color:#000;">2–3% POSITION</div>
+        <div class="tier-desc">All signals aligned. Thin, uncertain, and time-rich. High conviction play.</div>
+      </div>
+
+      <div class="tier" style="border-color:var(--blue);background:rgba(56,97,251,0.05);">
+        <div class="tier-num" style="color:var(--blue);">60–69</div>
+        <div class="tier-pill" style="background:var(--blue);color:#fff;">1–2% POSITION</div>
+        <div class="tier-desc">3+ pedals firing. Solid edge, measured size. Watch movers for confirmation.</div>
+      </div>
+
+      <div class="tier" style="border-color:var(--amber);background:rgba(245,166,35,0.05);">
+        <div class="tier-num" style="color:var(--amber);">50–59</div>
+        <div class="tier-pill" style="background:var(--amber);color:#000;">0.5–1% POSITION</div>
+        <div class="tier-desc">Noisy signal. Small bet or watchlist. Keep monitoring.</div>
+      </div>
+
+      <div class="tier" style="border-color:var(--border);">
+        <div class="tier-num" style="color:var(--dim);">&lt;50</div>
+        <div class="tier-pill" style="background:#2d3347;color:var(--sub);">WATCH ONLY</div>
+        <div class="tier-desc">Market is fairly priced or too liquid. No edge today.</div>
+      </div>
+
+    </div>
+
+    <!-- VOLUME WEIGHT -->
+    <div class="section-label">VOLUME PRO-RATING</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:12px;">Thin markets get a <strong style="color:#fff">score boost</strong> — the crowd hasn't found them. Deep markets get damped — the crowd has already corrected them.</p>
+      <div class="vol-row"><span class="vol-label" style="color:var(--green);">Ghost (0)</span><div class="vol-bar"><div class="vol-fill" style="width:75%;background:var(--green);"></div></div><span class="vol-val">1.5×</span></div>
+      <div class="vol-row"><span class="vol-label" style="color:var(--green);">Thin (&lt;500)</span><div class="vol-bar"><div class="vol-fill" style="width:100%;background:var(--green);"></div></div><span class="vol-val">2.0×</span></div>
+      <div class="vol-row"><span class="vol-label">Active (1k)</span><div class="vol-bar"><div class="vol-fill" style="width:65%;background:var(--amber);"></div></div><span class="vol-val">~1.3×</span></div>
+      <div class="vol-row"><span class="vol-label">Liquid (10k)</span><div class="vol-bar"><div class="vol-fill" style="width:35%;background:var(--amber);"></div></div><span class="vol-val">~0.8×</span></div>
+      <div class="vol-row"><span class="vol-label" style="color:var(--dim);">Deep (100k+)</span><div class="vol-bar"><div class="vol-fill" style="width:12%;background:var(--dim);"></div></div><span class="vol-val" style="color:var(--dim);">0.25×</span></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div>
+
+    <!-- THE 4 SIGNALS -->
+    <div class="section-label">THE 4 SIGNAL PEDALS</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+
+      <div class="signal" style="border-left-color:var(--green);">
+        <div class="signal-head">
+          <span class="signal-icon">⏱</span>
+          <div><div class="signal-name" style="color:var(--green);">TIME DECAY</div><div class="signal-sub2">Pedal 1 · Time remaining until expiration</div></div>
+        </div>
+        <div class="signal-body2">Markets far from expiration have more time for the crowd to be wrong. More runway = higher signal. Normalized over 30 days (720 hrs).</div>
+        <div class="signal-tip2">High = lots of time left for you to be right</div>
+      </div>
+
+      <div class="signal" style="border-left-color:var(--blue);">
+        <div class="signal-head">
+          <span class="signal-icon">📊</span>
+          <div><div class="signal-name" style="color:var(--blue);">SPREAD DRIFT</div><div class="signal-sub2">Pedal 2 · Bid/ask spread width</div></div>
+        </div>
+        <div class="signal-body2">Wide spread = market makers are uncertain too. Nobody has converged on the right price. Wide spread = edge opportunity.</div>
+        <div class="signal-tip2">High = market makers don't know either</div>
+      </div>
+
+      <div class="signal" style="border-left-color:var(--amber);">
+        <div class="signal-head">
+          <span class="signal-icon">🎯</span>
+          <div><div class="signal-name" style="color:var(--amber);">BASELINE DEVIATION</div><div class="signal-sub2">Pedal 3 · Distance from 50¢</div></div>
+        </div>
+        <div class="signal-body2">Markets near 50¢ are genuinely uncertain — the crowd is split. Near 0 or 100 = high conviction, less mispricing potential. 50¢ = maximum edge.</div>
+        <div class="signal-tip2">High = genuinely uncertain outcome, crowd is split</div>
+      </div>
+
+      <div class="signal" style="border-left-color:var(--purple);">
+        <div class="signal-head">
+          <span class="signal-icon">🏷</span>
+          <div><div class="signal-name" style="color:var(--purple);">CATEGORY EFFICIENCY</div><div class="signal-sub2">Pedal 4 · Market type multiplier (0.8–1.2×)</div></div>
+        </div>
+        <div class="signal-body2">Less analyst coverage = more mispricing. Entertainment and Companies get fewer sophisticated traders; Politics and Economics get many.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:11px;">
+          <div style="background:rgba(0,213,149,0.07);border-radius:6px;padding:7px 10px;">
+            <div style="color:var(--green);font-weight:700;margin-bottom:3px;">INEFFICIENT 1.2×</div>
+            <div style="color:var(--sub);">Entertainment · Companies</div>
+          </div>
+          <div style="background:rgba(246,70,93,0.07);border-radius:6px;padding:7px 10px;">
+            <div style="color:var(--red);font-weight:700;margin-bottom:3px;">EFFICIENT 0.8×</div>
+            <div style="color:var(--sub);">Politics · Economics</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FX PEDAL BOARD -->
+    <div class="section-label">FX PEDAL BOARD — KNOB REFERENCE</div>
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
+        <div style="text-align:center;padding:10px;background:#0f1117;border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:18px;margin-bottom:4px;">🎚</div>
+          <div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:0.06em;">SIGNAL</div>
+          <div style="font-size:10px;color:var(--sub);margin-top:4px;line-height:1.5;">Weights pedal 1/2/3 relative importance</div>
+        </div>
+        <div style="text-align:center;padding:10px;background:#0f1117;border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:18px;margin-bottom:4px;">🎚</div>
+          <div style="font-size:11px;font-weight:700;color:var(--amber);letter-spacing:0.06em;">DEPTH</div>
+          <div style="font-size:10px;color:var(--sub);margin-top:4px;line-height:1.5;">Volume boost amount for thin markets</div>
+        </div>
+        <div style="text-align:center;padding:10px;background:#0f1117;border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:18px;margin-bottom:4px;">🎚</div>
+          <div style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:0.06em;">TIME</div>
+          <div style="font-size:10px;color:var(--sub);margin-top:4px;line-height:1.5;">Master gain multiplier on final score</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);text-align:center;padding-top:8px;border-top:1px solid var(--border);">BYPASS button returns to raw base scores for comparison</div>
+    </div>
+
+    <!-- KEYBOARD + URL -->
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div class="section-label" style="margin-bottom:8px;">KEYBOARD</div>
+          <div style="font-size:12px;color:var(--sub);line-height:2;">
+            <code style="color:var(--green);font-family:monospace;">⌘R</code> — Force refresh<br>
+            <code style="color:var(--green);font-family:monospace;">Esc</code> — Close panel
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:8px;">AUTO-REFRESH</div>
+          <div style="font-size:12px;color:var(--sub);line-height:2;">
+            Off / 60s / 5m / 10m<br>
+            Ring drains as timer runs
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">
+    Kalshi Konnektor · Edge Detector · <a href="http://localhost:5555">localhost:5555</a><br>
+    <span style="color:#2d3347;">Built for one operator. Runs locally. API key never leaves your machine.</span>
+  </div>
+  <div class="footer-right">
+    <a href="http://localhost:5555">← Back to Dashboard</a><br>
+    <span style="color:#2d3347;font-size:10px;">papjamzzz · github.com/papjamzzz/kalshi-konnektor</span>
+  </div>
+</div>
+
+</body>
+</html>

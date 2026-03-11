@@ -773,6 +773,22 @@
       ↓ CSV
     </button>
 
+    <!-- Guide button -->
+    <button onclick="toggleGuide()" id="guide-btn" style="
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 12px;
+      font-size: 12px; font-weight: 600;
+      color: var(--dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.04em;
+    " onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">
+      ⚡ GUIDE
+    </button>
+
     <!-- RIGHT: Logo2 slot -->
     <img src="/static/logo2.png" onerror="this.style.display='none'"
          style="height:32px;border-radius:8px;margin-left:8px;">
@@ -1846,13 +1862,419 @@ document.body.addEventListener('mouseover', e => {
 
 // ── Keyboard shortcuts ────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closePanel();
+  if (e.key === 'Escape') { closePanel(); closeGuide(); }
   if (e.key === 'r' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); fetchMarkets(true); }
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 fetchMarkets(false);
 setupRefresh();
+
+// ── Guide panel ──────────────────────────────────────────────────────────────
+function toggleGuide() {
+  const panel = document.getElementById('guide-panel');
+  const overlay = document.getElementById('guide-overlay');
+  const isOpen = panel.classList.contains('guide-open');
+  if (isOpen) { closeGuide(); } else {
+    panel.classList.add('guide-open');
+    overlay.classList.add('guide-overlay-on');
+  }
+}
+function closeGuide() {
+  document.getElementById('guide-panel').classList.remove('guide-open');
+  document.getElementById('guide-overlay').classList.remove('guide-overlay-on');
+}
+function guideTab(tab) {
+  document.querySelectorAll('.gtab').forEach(t => t.classList.remove('gtab-active'));
+  document.querySelectorAll('.gsection').forEach(s => s.style.display = 'none');
+  document.getElementById('gtab-' + tab).classList.add('gtab-active');
+  document.getElementById('gs-' + tab).style.display = 'block';
+}
 </script>
+
+<!-- ══════════════════════════════════════════════════════════
+     GUIDE OVERLAY + PANEL
+══════════════════════════════════════════════════════════ -->
+<div id="guide-overlay" onclick="closeGuide()" style="
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:300;opacity:0;pointer-events:none;
+  transition:opacity 0.25s;
+"></div>
+
+<div id="guide-panel" style="
+  position:fixed;top:0;right:0;bottom:0;width:480px;max-width:95vw;
+  background:#0f1117;border-left:1px solid #1e2230;
+  z-index:301;overflow-y:auto;
+  transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  font-family:'Inter',sans-serif;
+">
+
+  <!-- Header -->
+  <div style="
+    padding:20px 24px 16px;
+    border-bottom:1px solid #1e2230;
+    background:linear-gradient(180deg,#13161f 0%,#0f1117 100%);
+    position:sticky;top:0;z-index:10;
+  ">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div>
+        <div style="font-size:11px;letter-spacing:0.12em;color:#00d595;font-weight:700;margin-bottom:2px;">OPERATOR'S MANUAL</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.02em;">Kalshi Konnektor</div>
+      </div>
+      <button onclick="closeGuide()" style="
+        background:transparent;border:1px solid #1e2230;border-radius:6px;
+        color:#6b7280;cursor:pointer;padding:6px 10px;font-size:16px;
+        transition:all 0.15s;
+      " onmouseover="this.style.color='#fff';this.style.borderColor='#2d3347'"
+         onmouseout="this.style.color='#6b7280';this.style.borderColor='#1e2230'">✕</button>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;">
+      <button class="gtab gtab-active" id="gtab-start" onclick="guideTab('start')">Quick Start</button>
+      <button class="gtab" id="gtab-signals" onclick="guideTab('signals')">The Signals</button>
+      <button class="gtab" id="gtab-scores" onclick="guideTab('scores')">Reading Scores</button>
+      <button class="gtab" id="gtab-controls" onclick="guideTab('controls')">Controls</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div style="padding:24px;">
+
+    <!-- ── QUICK START ── -->
+    <div class="gsection" id="gs-start">
+      <div class="guide-mission">
+        <div style="font-size:11px;letter-spacing:0.1em;color:#00d595;font-weight:700;margin-bottom:6px;">MISSION BRIEF</div>
+        <p style="margin:0;color:#d1d5db;line-height:1.7;font-size:14px;">
+          Kalshi Konnektor scans every open prediction market and scores them 0–100 for
+          <strong style="color:#fff">mispricing probability</strong>. High score = the market hasn't
+          figured out the right price yet. That's your edge.
+        </p>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div style="font-size:11px;letter-spacing:0.1em;color:#6b7280;font-weight:700;margin-bottom:14px;">5-STEP DEPLOYMENT</div>
+
+        <div class="guide-step">
+          <div class="guide-step-num">01</div>
+          <div>
+            <div class="guide-step-title">Launch the app</div>
+            <div class="guide-step-body">Double-click KalshiEdge on your Desktop. The dashboard comes up instantly — data loads in ~20 seconds in the background.</div>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <div class="guide-step-num">02</div>
+          <div>
+            <div class="guide-step-title">Read the table</div>
+            <div class="guide-step-body">Markets sort by score, highest first. Score 70+ = strong signal. Click any row to open the full breakdown.</div>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <div class="guide-step-num">03</div>
+          <div>
+            <div class="guide-step-title">Dial the FX knobs</div>
+            <div class="guide-step-body">Hit <strong style="color:#00d595">FX</strong> in the header to open the signal chain. Twist the knobs to weight what matters most to you right now.</div>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <div class="guide-step-num">04</div>
+          <div>
+            <div class="guide-step-title">Open on Kalshi</div>
+            <div class="guide-step-body">Click a market row → hit <strong style="color:#00d595">Open on Kalshi</strong> to jump straight to the order book and trade.</div>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <div class="guide-step-num">05</div>
+          <div>
+            <div class="guide-step-title">Star your watchlist</div>
+            <div class="guide-step-body">Star markets you're tracking. Toggle <strong style="color:#fff">Watchlist only</strong> to focus. Data refreshes every 60 seconds automatically.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:14px 16px;background:#13161f;border-radius:10px;border:1px solid #1e2230;">
+        <div style="font-size:11px;color:#6b7280;font-weight:700;letter-spacing:0.08em;margin-bottom:8px;">KEYBOARD SHORTCUTS</div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;">
+          <code style="color:#00d595;font-family:monospace;">⌘R</code><span style="color:#9ca3af;">Force refresh all markets</span>
+          <code style="color:#00d595;font-family:monospace;">Esc</code><span style="color:#9ca3af;">Close any open panel</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIGNALS ── -->
+    <div class="gsection" id="gs-signals" style="display:none;">
+      <div class="guide-mission">
+        <div style="font-size:11px;letter-spacing:0.1em;color:#00d595;font-weight:700;margin-bottom:6px;">THE SIGNAL CHAIN</div>
+        <p style="margin:0;color:#d1d5db;line-height:1.7;font-size:14px;">
+          Every market runs through 4 independent signal pedals. Each pedal asks a different question about mispricing. The final score is their combined output.
+        </p>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:14px;">
+
+        <div class="signal-card" style="border-left-color:#00d595;">
+          <div class="signal-header">
+            <span class="signal-icon">⏱</span>
+            <div>
+              <div class="signal-name">TIME DECAY</div>
+              <div class="signal-sub">Pedal 1 — Time remaining</div>
+            </div>
+          </div>
+          <p class="signal-body">Markets far from expiration have more time for the crowd to be wrong. The longer the runway, the higher this score. Normalized over 30 days.</p>
+          <div class="signal-tip">High score = lots of time left for you to be right</div>
+        </div>
+
+        <div class="signal-card" style="border-left-color:#3861fb;">
+          <div class="signal-header">
+            <span class="signal-icon">📊</span>
+            <div>
+              <div class="signal-name">SPREAD DRIFT</div>
+              <div class="signal-sub">Pedal 2 — Bid/ask spread</div>
+            </div>
+          </div>
+          <p class="signal-body">A wide bid/ask spread means market makers aren't confident either. Nobody has converged on the "right" price. Wide = uncertain = edge opportunity.</p>
+          <div class="signal-tip">High score = market makers are uncertain too</div>
+        </div>
+
+        <div class="signal-card" style="border-left-color:#f5a623;">
+          <div class="signal-header">
+            <span class="signal-icon">🎯</span>
+            <div>
+              <div class="signal-name">BASELINE DEVIATION</div>
+              <div class="signal-sub">Pedal 3 — Distance from 50/50</div>
+            </div>
+          </div>
+          <p class="signal-body">Markets near 50¢ are in genuine uncertainty territory — the crowd is split. Markets near 0¢ or 100¢ mean high conviction. Near 50 = maximum mispricing potential.</p>
+          <div class="signal-tip">High score = genuinely uncertain outcome</div>
+        </div>
+
+        <div class="signal-card" style="border-left-color:#a78bfa;">
+          <div class="signal-header">
+            <span class="signal-icon">🏷</span>
+            <div>
+              <div class="signal-name">CATEGORY EFFICIENCY</div>
+              <div class="signal-sub">Pedal 4 — Market type multiplier</div>
+            </div>
+          </div>
+          <p class="signal-body">Some categories attract more sophisticated traders (Politics, Economics) and price efficiently. Others (Entertainment, Companies) get less attention and misprice more often.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:12px;">
+            <div style="background:#1e2230;border-radius:6px;padding:8px;">
+              <div style="color:#00d595;font-weight:700;margin-bottom:4px;">INEFFICIENT (1.2×)</div>
+              <div style="color:#9ca3af;">Entertainment<br>Companies</div>
+            </div>
+            <div style="background:#1e2230;border-radius:6px;padding:8px;">
+              <div style="color:#f6465d;font-weight:700;margin-bottom:4px;">EFFICIENT (0.8×)</div>
+              <div style="color:#9ca3af;">Politics<br>Economics</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SCORES ── -->
+    <div class="gsection" id="gs-scores" style="display:none;">
+      <div class="guide-mission">
+        <div style="font-size:11px;letter-spacing:0.1em;color:#00d595;font-weight:700;margin-bottom:6px;">SCORE INTERPRETATION</div>
+        <p style="margin:0;color:#d1d5db;line-height:1.7;font-size:14px;">
+          The score (0–100) represents estimated mispricing probability. It combines all 4 signal pedals, weighted by volume pro-rating.
+        </p>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
+        <div class="score-tier" style="border-color:#00d595;background:rgba(0,213,149,0.06);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:22px;font-weight:900;color:#00d595;">70–100</span>
+            <span style="background:#00d595;color:#000;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;">2–3% POSITION</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#d1d5db;line-height:1.6;">Strong mispricing signal. All 4 pedals are aligned. The market is thin, uncertain, and hasn't converged. Act with conviction.</p>
+        </div>
+
+        <div class="score-tier" style="border-color:#3861fb;background:rgba(56,97,251,0.06);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:22px;font-weight:900;color:#3861fb;">60–69</span>
+            <span style="background:#3861fb;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;">1–2% POSITION</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#d1d5db;line-height:1.6;">Solid signal. At least 3 pedals are firing. Worth a measured position. Watch for movers.</p>
+        </div>
+
+        <div class="score-tier" style="border-color:#f5a623;background:rgba(245,166,35,0.06);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:22px;font-weight:900;color:#f5a623;">50–59</span>
+            <span style="background:#f5a623;color:#000;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;">0.5–1% POSITION</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#d1d5db;line-height:1.6;">Weak-to-moderate signal. Something's there but it's noisy. Small bet or watchlist only.</p>
+        </div>
+
+        <div class="score-tier" style="border-color:#2d3347;background:transparent;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:22px;font-weight:900;color:#6b7280;">&lt;50</span>
+            <span style="background:#2d3347;color:#9ca3af;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;">WATCH</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">Market is fairly priced, already liquid, or closing soon. Not worth capital today. Keep an eye in case conditions change.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:14px 16px;background:#13161f;border-radius:10px;border:1px solid #1e2230;">
+        <div style="font-size:11px;color:#6b7280;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">VOLUME WEIGHTING</div>
+        <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.7;">
+          Thin markets (under 500 contracts) get a <strong style="color:#fff">2× score boost</strong> — the crowd hasn't found them yet.
+          Deep markets (over 100k) get a <strong style="color:#fff">0.25× dampen</strong> — the crowd has already corrected them.
+          This is your thin-market alpha advantage.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── CONTROLS ── -->
+    <div class="gsection" id="gs-controls" style="display:none;">
+      <div class="guide-mission">
+        <div style="font-size:11px;letter-spacing:0.1em;color:#00d595;font-weight:700;margin-bottom:6px;">CONTROL REFERENCE</div>
+        <p style="margin:0;color:#d1d5db;line-height:1.7;font-size:14px;">Every knob, button, and filter — what it does and when to use it.</p>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
+
+        <div class="ctrl-block">
+          <div class="ctrl-title">🎛 FX PEDAL BOARD</div>
+          <div class="ctrl-row"><span class="ctrl-label">SIGNAL knob</span><span class="ctrl-desc">Weights the 3 signal pedals (time, spread, baseline) relative to each other. Right = more weight to time decay. Left = more weight to spread.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">DEPTH knob</span><span class="ctrl-desc">Controls volume dampening. Right = thin markets get a bigger boost. Left = flattens the volume weight — treats all volumes equally.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">TIME knob</span><span class="ctrl-desc">Applies a gain multiplier to the final score. Right = everything gets amplified. Left = everything gets compressed. Like a master volume.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">BYPASS</span><span class="ctrl-desc">Disables FX and returns to raw base scores. Use to compare your dialed-in view against the unweighted signal.</span></div>
+        </div>
+
+        <div class="ctrl-block">
+          <div class="ctrl-title">🔍 FILTER BAR</div>
+          <div class="ctrl-row"><span class="ctrl-label">Category pills</span><span class="ctrl-desc">Click to filter by market category. Click again to deselect. Multiple selections not supported — pick the category you're focused on.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">Score sliders</span><span class="ctrl-desc">The two number boxes are min/max score thresholds. Type a number to narrow the table to only markets in that score range.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">Search</span><span class="ctrl-desc">Live search by market title or ticker. Runs on the local data — no extra API calls.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">Watchlist only</span><span class="ctrl-desc">Toggle to show only starred markets. Stars are saved in your browser — they persist across refreshes.</span></div>
+        </div>
+
+        <div class="ctrl-block">
+          <div class="ctrl-title">📋 MARKET DETAIL PANEL</div>
+          <div class="ctrl-row"><span class="ctrl-label">Click any row</span><span class="ctrl-desc">Opens the full signal breakdown: each pedal score, score history chart, bid/ask/spread, days to close, and Kelly position size.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">Open on Kalshi</span><span class="ctrl-desc">Jumps directly to the market's event page on kalshi.com. See the live order book and trade.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">★ Star</span><span class="ctrl-desc">Adds the market to your watchlist. Markets you star appear in Top Movers tracking too.</span></div>
+        </div>
+
+        <div class="ctrl-block">
+          <div class="ctrl-title">📈 TOP MOVERS</div>
+          <div class="ctrl-row"><span class="ctrl-label">Green delta</span><span class="ctrl-desc">Score increased since last refresh — mispricing is growing. The market is moving away from fair value. Opportunity increasing.</span></div>
+          <div class="ctrl-row"><span class="ctrl-label">Red delta</span><span class="ctrl-desc">Score decreased — the crowd is correcting. Move fast or let it go.</span></div>
+        </div>
+
+        <div class="ctrl-block">
+          <div class="ctrl-title">↓ CSV EXPORT</div>
+          <div class="ctrl-row"><span class="ctrl-label">Export</span><span class="ctrl-desc">Downloads the current filtered view as a .csv file with all signal scores, pricing, and sizing. Open in Excel or Sheets for deeper analysis.</span></div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:20px;padding:14px 16px;background:#13161f;border-radius:10px;border:1px solid #1e2230;text-align:center;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">FULL ONE-PAGE REFERENCE</div>
+        <a href="/static/guide.html" target="_blank" style="
+          display:inline-block;background:var(--green);color:#000;
+          font-size:12px;font-weight:700;padding:8px 20px;border-radius:8px;
+          text-decoration:none;letter-spacing:0.04em;
+        ">Open Printable Guide ↗</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.guide-open { transform: translateX(0) !important; }
+.guide-overlay-on { opacity: 1 !important; pointer-events: all !important; }
+
+.gtab {
+  background: transparent;
+  border: 1px solid #1e2230;
+  border-radius: 6px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.gtab:hover { color: #fff; border-color: #2d3347; }
+.gtab-active { background: #00d595 !important; color: #000 !important; border-color: #00d595 !important; }
+
+.guide-mission {
+  background: linear-gradient(135deg, rgba(0,213,149,0.06) 0%, rgba(56,97,251,0.04) 100%);
+  border: 1px solid rgba(0,213,149,0.15);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.guide-step {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+.guide-step-num {
+  font-size: 11px;
+  font-weight: 900;
+  color: #00d595;
+  background: rgba(0,213,149,0.1);
+  border: 1px solid rgba(0,213,149,0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+.guide-step-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.guide-step-body { font-size: 13px; color: #9ca3af; line-height: 1.6; }
+
+.signal-card {
+  background: #13161f;
+  border: 1px solid #1e2230;
+  border-left: 3px solid;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.signal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.signal-icon { font-size: 20px; }
+.signal-name { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.04em; }
+.signal-sub { font-size: 11px; color: #6b7280; margin-top: 1px; }
+.signal-body { font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0 0 10px; }
+.signal-tip {
+  font-size: 11px; font-weight: 700; color: #00d595;
+  background: rgba(0,213,149,0.08); border-radius: 6px;
+  padding: 5px 10px; letter-spacing: 0.04em;
+}
+
+.score-tier {
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.ctrl-block {
+  background: #13161f;
+  border: 1px solid #1e2230;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.ctrl-title {
+  font-size: 11px; font-weight: 700; color: #fff;
+  letter-spacing: 0.08em; margin-bottom: 10px;
+}
+.ctrl-row {
+  display: flex; flex-direction: column;
+  margin-bottom: 10px; padding-bottom: 10px;
+  border-bottom: 1px solid #1e2230;
+}
+.ctrl-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.ctrl-label { font-size: 12px; font-weight: 600; color: #00d595; margin-bottom: 3px; }
+.ctrl-desc { font-size: 12px; color: #9ca3af; line-height: 1.6; }
+</style>
+
 </body>
 </html>
