@@ -179,20 +179,41 @@ def fetch_markets_fast():
         for e in events
     }
 
-    # Step 2: fetch open markets directly, capped at 2000 (~2 calls)
-    markets = _paginate(
-        "markets",
-        {"status": "open", "limit": 1000},
-        "markets",
-        max_items=2000,
-    )
+    # Step 2: fetch markets for each event (real single-outcome markets only)
+    # This avoids KXMVE parlay markets which dominate the generic /markets endpoint
+    markets = []
+    event_tickers = list(cat_map.keys())[:150]  # cap at 150 events max
+    for event_ticker in event_tickers:
+        batch = _paginate(
+            "markets",
+            {"event_ticker": event_ticker, "limit": 100},
+            "markets",
+        )
+        markets.extend(batch)
+        if len(markets) >= 2000:
+            break
+    print(f"  → {len(markets)} real markets (via events)")
     print(f"  → {len(markets)} markets")
 
-    # Step 3: join category data
+    # Step 3: join category data + normalize new dollar-based fields to cents
     for m in markets:
         info = cat_map.get(m.get("event_ticker", ""), {})
         m["_category"]    = info.get("category", "")
         m["_event_title"] = info.get("title", "")
+
+        # Kalshi renamed fields to *_dollars (0.0–1.0). Normalize to cents (0–100).
+        try:
+            m["yes_bid"] = round(float(m.get("yes_bid_dollars") or 0) * 100, 1)
+        except (TypeError, ValueError):
+            m["yes_bid"] = 0
+        try:
+            m["yes_ask"] = round(float(m.get("yes_ask_dollars") or 0) * 100, 1)
+        except (TypeError, ValueError):
+            m["yes_ask"] = 0
+        try:
+            m["volume"] = int(float(m.get("volume_fp") or 0))
+        except (TypeError, ValueError):
+            m["volume"] = 0
 
     return markets
 
@@ -208,6 +229,9 @@ def score_market(m):
         return None
     if yes_bid == 0 and yes_ask == 0:
         return None
+    # Use ask as proxy for mid if bid is zero (no buyers yet)
+    if yes_bid == 0 and yes_ask > 0:
+        yes_bid = max(yes_ask - 5, 1)
 
     yes_price = (yes_bid + yes_ask) / 2
     volume    = m.get("volume") or 0
