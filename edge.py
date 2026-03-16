@@ -8,18 +8,14 @@ import time
 import requests
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+from kalshi_auth import signed_headers
 
 load_dotenv()
 
-API_KEY  = os.getenv("KALSHI_API_KEY")
 BASE_URL = "https://api.elections.kalshi.com/trade-api/v2"
+API_PATH = "/trade-api/v2"
 
-# Reuse TCP connections across all requests
 _SESSION = requests.Session()
-_SESSION.headers.update({
-    "Authorization": f"Token {API_KEY}",
-    "Content-Type":  "application/json",
-})
 
 # ── Volume bounds ────────────────────────────────────────────────────────────
 LOW_VOL  = 500
@@ -128,7 +124,12 @@ def _paginate(endpoint, params, list_key, max_items=None):
 
         for attempt in range(4):
             try:
-                r = _SESSION.get(f"{BASE_URL}/{endpoint}", params=p, timeout=15)
+                path = f"{API_PATH}/{endpoint}"
+                r = _SESSION.get(
+                    f"{BASE_URL}/{endpoint}",
+                    headers=signed_headers("GET", path),
+                    params=p, timeout=15
+                )
                 if r.status_code == 429:
                     wait = 2 ** attempt
                     print(f"  ⏳ 429 on /{endpoint} — backing off {wait}s")
