@@ -11,7 +11,7 @@ from datetime import datetime
 
 from flask import Flask, jsonify, render_template, request
 
-from edge import get_scored_markets, volume_weight
+from edge import get_scored_markets, volume_weight, fetch_sports_odds, get_odds_key_status
 
 app = Flask(__name__)
 
@@ -177,6 +177,35 @@ def api_stats():
         "top_score":   markets[0]["score"] if markets else 0,
         "avg_score":   round(sum(m["score"] for m in markets) / len(markets), 1),
     })
+
+
+# ── Sports odds routes ───────────────────────────────────────────────────────
+
+@app.route("/api/odds")
+def api_odds():
+    """
+    Fetch live sports odds via key rotation.
+    Query params:
+      sport    — default: basketball_nba
+      markets  — default: h2h
+      regions  — default: us
+      provider — optional: sportsoddsapi | pinnacle
+    """
+    sport    = request.args.get("sport",    "basketball_nba")
+    markets  = request.args.get("markets",  "h2h")
+    regions  = request.args.get("regions",  "us")
+    provider = request.args.get("provider", None)
+
+    data = fetch_sports_odds(sport=sport, markets=markets,
+                             regions=regions, provider=provider)
+    return jsonify({"sport": sport, "markets": markets,
+                    "count": len(data), "data": data})
+
+
+@app.route("/api/odds-status")
+def api_odds_status():
+    """Return key slot health for all providers."""
+    return jsonify(get_odds_key_status())
 
 
 # ── Startup ──────────────────────────────────────────────────────────────────

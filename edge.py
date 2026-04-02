@@ -9,6 +9,7 @@ import requests
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from kalshi_auth import signed_headers
+from odds_keys import get_client as get_odds_client
 
 load_dotenv()
 
@@ -302,6 +303,45 @@ def get_scored_markets(max_events=100):
     scored = [m for m in scored if m is not None]
     scored.sort(key=lambda x: x["score"], reverse=True)
     return scored
+
+
+# ── Sports odds via rotation client ─────────────────────────────────────────
+
+def fetch_sports_odds(sport: str = "basketball_nba", markets: str = "h2h",
+                      regions: str = "us", provider: str = None) -> list:
+    """
+    Fetch live sports odds using the key rotation client.
+    Returns list of game objects, or [] on total failure.
+
+    Args:
+        sport:    e.g. "basketball_nba", "americanfootball_nfl", "soccer_epl"
+        markets:  "h2h" | "spreads" | "totals"
+        regions:  "us" | "uk" | "eu" | "au"
+        provider: force a specific provider, or None to auto-select
+    """
+    try:
+        client = get_odds_client()
+        data, used_provider, key_index = client.get(
+            f"/v4/sports/{sport}/odds",
+            params={"markets": markets, "regions": regions, "oddsFormat": "decimal"},
+            provider=provider,
+        )
+        print(f"  ✓ Sports odds fetched via [{used_provider}] key_{key_index}")
+        return data if isinstance(data, list) else data.get("data", [])
+    except RuntimeError as e:
+        print(f"  ✗ Sports odds unavailable: {e}")
+        return []
+    except Exception as e:
+        print(f"  ✗ Sports odds fetch error: {e}")
+        return []
+
+
+def get_odds_key_status() -> dict:
+    """Return key slot health for all providers — used by the dashboard."""
+    try:
+        return get_odds_client().key_status()
+    except Exception:
+        return {}
 
 
 # ── CLI entrypoint ───────────────────────────────────────────────────────────
