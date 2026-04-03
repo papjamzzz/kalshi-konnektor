@@ -19,6 +19,15 @@ from cryptography.hazmat.backends import default_backend
 
 
 def _load_key():
+    # Railway / cloud: paste PEM content directly as KALSHI_PRIVATE_KEY env var
+    key_content = os.getenv("KALSHI_PRIVATE_KEY", "").strip()
+    if key_content:
+        key_content = key_content.replace("\\n", "\n")
+        return serialization.load_pem_private_key(
+            key_content.encode("utf-8"), password=None, backend=default_backend()
+        )
+
+    # Local: read from file path
     key_path = os.getenv(
         "KALSHI_PRIVATE_KEY_PATH",
         os.path.expanduser("~/kalshi.key")
@@ -26,7 +35,7 @@ def _load_key():
     if not os.path.exists(key_path):
         raise FileNotFoundError(
             f"Kalshi private key not found at: {key_path}\n"
-            f"Set KALSHI_PRIVATE_KEY_PATH in .env or place key at ~/kalshi.key"
+            f"Set KALSHI_PRIVATE_KEY (PEM content) or KALSHI_PRIVATE_KEY_PATH in env"
         )
     with open(key_path, "rb") as f:
         return serialization.load_pem_private_key(
