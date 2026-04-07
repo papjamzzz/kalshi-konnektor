@@ -21,6 +21,7 @@ import threading
 import requests
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+from typing import Optional
 
 load_dotenv()
 
@@ -232,7 +233,7 @@ class OddsClient:
 
 
 # ── Singleton — import once, use everywhere ───────────────────────────────────
-_client: OddsClient | None = None
+_client = None  # type: Optional[OddsClient]
 
 def get_client() -> OddsClient:
     global _client
