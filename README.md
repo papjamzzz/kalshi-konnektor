@@ -4,7 +4,7 @@
 
 ![kalshi konnektor dashboard](static/screenshots/dashboard.png)
 
-A real-time edge detection dashboard for Kalshi prediction markets. Scores every open market across four independent signals, surfaces the highest-conviction opportunities, and lets you tune the scoring engine live — without restarting anything.  YOU ALONE DIAL IN THAT SPOT UNIQUE TO YOU AND SORT THE JUNK (MOST OF IT) FROM THE TRULY OFF PRICED FUTURES.
+A real-time edge detection dashboard for Kalshi prediction markets. Scores every open market across four independent signals, surfaces the highest-conviction opportunities, and lets you tune the scoring engine live — without restarting anything.
 
 ---
 
@@ -18,14 +18,14 @@ Kalshi Edge automates the scan and puts the signal front and center.
 
 ## Features
 
-- 📡 **Live market feed** — pulls all open Kalshi markets via API, refreshes on your schedule
-- 🎯 **4-signal scoring engine** — decay, drift, baseline, and category signals scored independently
-- 🎛 **KE-1 Signal Processor** — guitar-pedal-style UI with three live knobs that re-rank the table in real time without a page reload
-- 📊 **Kelly sizing** — position size suggestions calculated from live score
-- 🔍 **Filter + sort** — by category, score, volume, time remaining
-- ⭐ **Watchlist** — star markets to pin and track across sessions
-- 🌑 **Dark theme** — built for long sessions
-- 🔒 **Localhost only** — runs entirely on your machine, never exposed to your network
+- **Live market feed** — pulls all open Kalshi markets via API, refreshes on your schedule
+- **4-signal scoring engine** — decay, drift, baseline, and category signals scored independently
+- **KE-1 Signal Processor** — guitar-pedal-style UI with three live knobs that re-rank the table in real time without a page reload
+- **Kelly sizing** — position size suggestions calculated from live score
+- **Filter + sort** — by category, score, volume, time remaining
+- **Watchlist** — star markets to pin and track across sessions
+- **Dark theme** — built for long sessions
+- **Localhost only** — runs entirely on your machine, never exposed to your network
 
 ---
 
@@ -151,4 +151,4 @@ Built by [Creative Konsoles](https://creativekonsoles.com) — tools built using
 
 **[creativekonsoles.com](https://creativekonsoles.com)** &nbsp;·&nbsp; support@creativekonsoles.com
 
-<!-- repo maintenance: 2026-04-04 -->
+<!-- repo maintenance: 2026-04-10 -->
