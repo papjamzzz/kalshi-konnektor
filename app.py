@@ -227,4 +227,5 @@ if __name__ == "__main__":
     t = threading.Thread(target=background_load, daemon=True)
     t.start()
 
-    app.run(debug=False, port=5555, host="127.0.0.1")
+    PORT = int(os.getenv("PORT", "5555"))
+    app.run(debug=False, port=PORT, host="0.0.0.0")
