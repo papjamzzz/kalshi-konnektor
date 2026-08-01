@@ -228,4 +228,5 @@ if __name__ == "__main__":
     t.start()
 
     PORT = int(os.getenv("PORT", "5555"))
-    app.run(debug=False, port=PORT, host="0.0.0.0")
+    HOST = os.getenv("HOST", "127.0.0.1")
+    app.run(debug=False, port=PORT, host=HOST)

@@ -1,6 +1,6 @@
-flask>=2.3.0
-requests>=2.31.0
-python-dotenv>=1.0.0
-pandas>=2.0.0
-cryptography>=41.0.0
-gunicorn
+flask==3.1.3
+requests==2.34.2
+python-dotenv==1.2.2
+pandas>=2.0.0,<3.0.0
+cryptography==49.0.0
+gunicorn==26.0.0
