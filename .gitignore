@@ -5,3 +5,6 @@ data/
 .DS_Store
 *.zip
 venv/
+
+# runtime logs
+*.log
