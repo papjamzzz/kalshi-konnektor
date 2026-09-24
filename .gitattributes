@@ -1,0 +1,5 @@
+# Flask puts the HTML in templates/ and the CSS/JS in static/, which made
+# GitHub classify these Python services as HTML projects. Vendoring those
+# directories leaves the language bar showing what the repo actually is.
+templates/** linguist-vendored
+static/**    linguist-vendored
